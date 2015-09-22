@@ -1,0 +1,2 @@
+# m h  dom mon dow   command
+53 * * * * /home/ubuntu/TrendingTopics/cron/run-camus.sh >> /home/ubuntu/TrendingTopics/cron/cron.log 2>&1
