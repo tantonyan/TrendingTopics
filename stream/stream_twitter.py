@@ -133,7 +133,7 @@ def kafkaItem(item):
 
     except: # in case there are issues just send back an empty string
 	print("Exception: " + str(sys.exc_info()[0]) + "\n On: \n\t" + str(line) + " From \n\t" + str(item))
-	return ''
+	return None
 
     return line
 
@@ -144,14 +144,15 @@ item_enc = ''
 for item in r:
 #    print(item)
     kItem = kafkaItem(item)
-    try:
-	item_enc = json.dumps(kItem).encode('UTF-8') # producer expects the message to be in b type
-    except: # sometimes we get an encoding exception 
-	    # e.g. "UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2"
-	print("encoding exception...")
-	continue # don't process this tweet if there were issues with encoding 
+    if kItem is not None:
+        try:
+	    item_enc = json.dumps(kItem).encode('UTF-8') # producer expects the message to be in b type
+        except: # sometimes we get an encoding exception 
+	        # e.g. "UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2"
+	    #print("encoding exception...")
+	    continue # don't process this tweet if there were issues with encoding 
 
-    producer.send_messages(topic, item_enc) 
+        producer.send_messages(topic, item_enc) 
 #    producer.send_messages(topic, part_id, item_enc) 
 #    part_id = (part_id + 1) % part_num
 
