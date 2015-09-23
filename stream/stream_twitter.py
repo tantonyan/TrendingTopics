@@ -109,7 +109,7 @@ def userData(item):
 	if 'id_str' in item['user']:
 	    uData['id_str'] = item['user']['id_str']
 	
-	if 'id_str' in item['user']:
+	if 'location' in item['user']:
 	    uData['location'] = item['user']['location']
 
     return uData
@@ -120,7 +120,7 @@ def kafkaItem(item):
     if ('id_str' not in item) or ('timestamp_ms' not in item) or('text' not in item): 
 	# other message (limit, etc.)
 	print("Received a non-tweet item: \n\t"+str(item))
-        return line 
+        return None 
 
     try:
 	line['id_str'] = item['id_str'] # expected to be present
@@ -138,8 +138,6 @@ def kafkaItem(item):
     return line
 
 # raw iterable stream object:
-#part_num = len(partitionIds)
-#part_id = 0 # we will specify the partition to be used -- makes easier for kafka
 item_enc = ''
 for item in r:
 #    print(item)

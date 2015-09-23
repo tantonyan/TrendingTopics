@@ -17,7 +17,10 @@ def convert_to_1hr(time: Date): String = {
    val hourFormat = new SimpleDateFormat("yyyyMMddHH")
    hourFormat.format(time)
 }
-
+/**
+def matchTweet(json_line: String): String = x match {
+}
+*/
 //val tweet = JSON.parseFull("""{"text": "@ImYourEpiphany \ud83d\ude02\ud83d\ude02\ud83d\ude02 no. Not at all.", "coordinates": [], "timestamp_ms": "1442469035685", "entities": {"user_mentions": ["ImYourEpiphany","ZafulUs"], "hashtags": ["Zaful","THashTag"]}, "place": {"full_name": "Bell, CA", "country_code": "US", "name": "Bell", "place_type": "city"}, "user": {"id_str": "3271546344", "location": "Los Angeles, CA"}, "id_str": "644387956707295233"}""")
 
 //val conf = new SparkConf().setAppName("PriceDataExercise")
@@ -72,11 +75,11 @@ val trends = file.map(line => {
     
 //    (t_id, place._1, place._2)
   } // case  t:
-  case _ => ""
+  case _ => ((0, (0,0),0), 1)
  }
-}).reduceByKey(_+_).flatten
+//}).reduceByKey(_+_).flatten
 
-//})
+})
 print(trends)
 trends.saveAsTextFile(fileOut)
 
