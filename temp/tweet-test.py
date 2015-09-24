@@ -1,5 +1,6 @@
 from pyspark import SparkContext, SparkConf
 import json
+import sys
 import datetime
 
 hdfs = "hdfs://ec2-54-209-187-157.compute-1.amazonaws.com:9000"
@@ -11,7 +12,7 @@ if len(sys.argv) > 1:
 folder_in = hdfs + path
 
 def convert_to_1hr(time_ms):
-    return datetime.datetime.fromtimestamp(time_ms/1000).strftime('%Y%m%d%H')
+    return datetime.datetime.fromtimestamp(long(time_ms)/1000).strftime('%Y%m%d%H')
 
 # get poster's user
 def userId(item):
@@ -40,8 +41,8 @@ def tweetCountry(item):
 
 def tweetCity(item):
     if ('place' in item) and isinstance(item['place'], dict):
-        if 'city' in item['place']:
-	    return item['place']['city']
+        if 'name' in item['place']:
+	    return item['place']['name']
     return None
 
 # parse the next raw text line into a tweet -- just the needed elements
@@ -67,17 +68,20 @@ def tweet_from_json_line(json_line):
 # return one tuple per tag: ((hourSlot, country, city, tag), 1)
 def hourlyTagTuple(tweet):
     return (((tweet['hourSlot'], tweet['country'], tweet['city'], tag), 1) for tag in tweet['tags'])
+#    return ((tweet['hourSlot'], tweet['country'], tweet['city']), 1)
 
 # main work...
 conf = (SparkConf().setAppName("Tweets-Py-mvp"))
-sc = new SparkContext(conf = conf)
+sc = SparkContext(conf = conf)
 tweet_jsons = sc.textFile(folder_in)
 
 tweets = tweet_jsons.map(lambda line : tweet_from_json_line(line))#.persist
 
-tagPlaceHourlyCount = tweets.map(hourlyTagTuple).reduceByKey(lambda x, y: x + y) 
+tweetsWithTags = tweets.filter(lambda tweet : len(tweet['tags']) > 0)
+
+tagPlaceHourlyCount = tweetsWithTags.map(hourlyTagTuple).reduceByKey(lambda x, y: x + y) 
 	
-folder_out = folder_in + "_pyOut"
+folder_out = folder_in + "_pyOut6"
 tagPlaceHourlyCount.saveAsTextFile(folder_out)
 
 
