@@ -14,15 +14,15 @@ folder_in = hdfs + path
 
 # take a datetime object and return a string for the minute slot
 def convert_to_1m(dt):
-    return dt.strftime('%Y%m%d%H%M')
+    return int(dt.strftime('%Y%m%d%H%M'))
 
 # take a datetime object and return a string for the hour slot
 def convert_to_1h(dt):
-    return dt.strftime('%Y%m%d%H')
+    return int(dt.strftime('%Y%m%d%H'))
 
 # take a datetime object and return a string for the day slot
 def convert_to_1d(dt):
-    return dt.strftime('%Y%m%d')
+    return int(dt.strftime('%Y%m%d'))
 
 # get poster's user
 def userId(item):
@@ -97,12 +97,30 @@ tweetsWithTags = tweets.filter(lambda tweet : (tweet is not None) and ('tags' in
 tagsAsValue = tweetsWithTags.map(lambda tweet : ((tweet['daySlot'], tweet['hourSlot'], tweet['minuteSlot'], tweet['country'], tweet['city']), tweet['tags']))
 singleTagTuples = tagsAsValue.flatMapValues(lambda x : x)#.persist # ((daySlot, hourSlot, minuteSlot, country, city), tag)
 
-tagPlaceDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
-tagPlaceHourlyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((h, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
-tagPlaceMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+# city 
+tagCityDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagCityHourlyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((h, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagCityMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+
+# country
+tagCountryDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagCountryHourlyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((h, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagCountryMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
 	
-folder_out = folder_in + "_pyOut"
-tagPlaceDailyCount.saveAsTextFile(folder_out+"D")
-tagPlaceHourlyCount.saveAsTextFile(folder_out+"H")
-tagPlaceMinuteCount.saveAsTextFile(folder_out+"M")
+# world
+tagWorldDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagWorldHourlyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((h, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagWorldMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, t), 1)).reduceByKey(lambda x, y: x + y) 
+
+
+folder_out = folder_in + "_out2_"
+tagCityDailyCount.saveAsTextFile(folder_out+"D_city")
+tagCityHourlyCount.saveAsTextFile(folder_out+"H_city")
+tagCityMinuteCount.saveAsTextFile(folder_out+"M_city")
+tagCountryDailyCount.saveAsTextFile(folder_out+"D_country")
+tagCountryHourlyCount.saveAsTextFile(folder_out+"H_country")
+tagCountryMinuteCount.saveAsTextFile(folder_out+"M_country")
+tagWorldDailyCount.saveAsTextFile(folder_out+"D_world")
+tagWorldHourlyCount.saveAsTextFile(folder_out+"H_world")
+tagWorldMinuteCount.saveAsTextFile(folder_out+"M_world")
 #singleTagTuples.saveAsTextFile(folder_out)
