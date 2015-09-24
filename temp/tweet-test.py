@@ -4,16 +4,25 @@ import sys
 import datetime
 
 hdfs = "hdfs://ec2-54-209-187-157.compute-1.amazonaws.com:9000"
-#path = "/user/test-tweets/tweets-17-22.json"
-path = "/user/test-tweets/json-tweets-10.txt"
+path = "/user/test-tweets/tweets-17-22.json"
+#path = "/user/test-tweets/json-tweets-10.txt"
 # can take the path to a folder/file as an argument to be added to the hdfs path
 if len(sys.argv) > 1:
     path = sys.argv[1]
 
 folder_in = hdfs + path
 
-def convert_to_1hr(time_ms):
-    return datetime.datetime.fromtimestamp(long(time_ms)/1000).strftime('%Y%m%d%H')
+# take a datetime object and return a string for the minute slot
+def convert_to_1m(dt):
+    return dt.strftime('%Y%m%d%H%M')
+
+# take a datetime object and return a string for the hour slot
+def convert_to_1h(dt):
+    return dt.strftime('%Y%m%d%H')
+
+# take a datetime object and return a string for the day slot
+def convert_to_1d(dt):
+    return dt.strftime('%Y%m%d')
 
 # get poster's user
 def userId(item):
@@ -58,13 +67,19 @@ def tweet_from_json_line(json_line):
 
     tweet = {}
     tweet['t_id'] = item['id_str']
-    tweet['time_ms'] = item['timestamp_ms']
-    tweet['hourSlot'] = convert_to_1hr(tweet['time_ms'])
     tweet['u_id'] = userId(item) # just the userId is enough
     tweet['coors'] = item['coordinates'] # list [latitude,longitude]
-    tweet['tags'] = trendItems(item)
+    tweet['tags'] = trendItems(item) # will have the combined list of hashtags and user mentions
     tweet['city'] = tweetCity(item)
     tweet['country'] = tweetCountry(item) # the country code: US, UK, etc.
+
+    # time related fields
+    tweet['time_ms'] = item['timestamp_ms']
+    tweetTime = datetime.datetime.fromtimestamp(long(tweet['time_ms'])/1000)
+    tweet['minuteSlot'] = convert_to_1m(tweetTime)
+    tweet['hourSlot'] = convert_to_1h(tweetTime)
+    tweet['daySlot'] = convert_to_1d(tweetTime)
+
 #    tweet['text'] = item['text'] # don't need the actual tweet...
 
     return tweet
@@ -77,19 +92,17 @@ tweet_jsons = sc.textFile(folder_in)
 
 tweets = tweet_jsons.map(tweet_from_json_line)#.persist
 
-tweetsWithTags = tweets.filter(lambda tweet : len(tweet['tags']) > 0)
+tweetsWithTags = tweets.filter(lambda tweet : (tweet is not None) and ('tags' in tweet) and (len(tweet['tags']) > 0))
 
-tagsAsValue = tweetsWithTags.map(lambda tweet : ((tweet['hourSlot'], tweet['country'], tweet['city']), tweet['tags']))
-singleTagTuples = tagsAsValue.flatMapValues(lambda x : x) # ((hourSlot, country, city), tag)
+tagsAsValue = tweetsWithTags.map(lambda tweet : ((tweet['daySlot'], tweet['hourSlot'], tweet['minuteSlot'], tweet['country'], tweet['city']), tweet['tags']))
+singleTagTuples = tagsAsValue.flatMapValues(lambda x : x)#.persist # ((daySlot, hourSlot, minuteSlot, country, city), tag)
 
-tagPlaceHourlyCount = singleTagTuples.map(lambda ((h, cc, c), t) : ((h, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagPlaceDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagPlaceHourlyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((h, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagPlaceMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
 	
-folder_out = folder_in + "_pyOut2"
-tagPlaceHourlyCount.saveAsTextFile(folder_out)
+folder_out = folder_in + "_pyOut"
+tagPlaceDailyCount.saveAsTextFile(folder_out+"D")
+tagPlaceHourlyCount.saveAsTextFile(folder_out+"H")
+tagPlaceMinuteCount.saveAsTextFile(folder_out+"M")
 #singleTagTuples.saveAsTextFile(folder_out)
-'''
-allTweets = tweets.map(lambda tweet : (tweet['hourSlot'], tweet['country'], tweet['city'], tweet['tags']))
-allTweets.saveAsTextFile(folder_out+"_all")
-wtTweets = tweetsWithTags.map(lambda tweet : (tweet['hourSlot'], tweet['country'], tweet['city'], tweet['tags']))
-wtTweets.saveAsTextFile(folder_out+"_wt")
-'''
