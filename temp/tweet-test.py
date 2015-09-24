@@ -4,6 +4,7 @@ import sys
 import datetime
 
 hdfs = "hdfs://ec2-54-209-187-157.compute-1.amazonaws.com:9000"
+#path = "/user/test-tweets/tweets-17-22.json"
 path = "/user/test-tweets/json-tweets-10.txt"
 # can take the path to a folder/file as an argument to be added to the hdfs path
 if len(sys.argv) > 1:
@@ -47,7 +48,10 @@ def tweetCity(item):
 
 # parse the next raw text line into a tweet -- just the needed elements
 def tweet_from_json_line(json_line):
-    item = json.loads(json_line)
+    try:
+        item = json.loads(json_line)
+    except:
+	return None # not a json line -- just retun None
 
     if ('id_str' not in item) or ('timestamp_ms' not in item) or('text' not in item):
 	return None # not what we expected
@@ -65,25 +69,27 @@ def tweet_from_json_line(json_line):
 
     return tweet
 
-# return one tuple per tag: ((hourSlot, country, city, tag), 1)
-def hourlyTagTuple(tweet):
-    return (((tweet['hourSlot'], tweet['country'], tweet['city'], tag), 1) for tag in tweet['tags'])
-#    return ((tweet['hourSlot'], tweet['country'], tweet['city']), 1)
 
 # main work...
 conf = (SparkConf().setAppName("Tweets-Py-mvp"))
 sc = SparkContext(conf = conf)
 tweet_jsons = sc.textFile(folder_in)
 
-tweets = tweet_jsons.map(lambda line : tweet_from_json_line(line))#.persist
+tweets = tweet_jsons.map(tweet_from_json_line)#.persist
 
 tweetsWithTags = tweets.filter(lambda tweet : len(tweet['tags']) > 0)
 
-tagPlaceHourlyCount = tweetsWithTags.map(hourlyTagTuple).reduceByKey(lambda x, y: x + y) 
+tagsAsValue = tweetsWithTags.map(lambda tweet : ((tweet['hourSlot'], tweet['country'], tweet['city']), tweet['tags']))
+singleTagTuples = tagsAsValue.flatMapValues(lambda x : x) # ((hourSlot, country, city), tag)
+
+tagPlaceHourlyCount = singleTagTuples.map(lambda ((h, cc, c), t) : ((h, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
 	
-folder_out = folder_in + "_pyOut6"
+folder_out = folder_in + "_pyOut2"
 tagPlaceHourlyCount.saveAsTextFile(folder_out)
-
-
-
-
+#singleTagTuples.saveAsTextFile(folder_out)
+'''
+allTweets = tweets.map(lambda tweet : (tweet['hourSlot'], tweet['country'], tweet['city'], tweet['tags']))
+allTweets.saveAsTextFile(folder_out+"_all")
+wtTweets = tweetsWithTags.map(lambda tweet : (tweet['hourSlot'], tweet['country'], tweet['city'], tweet['tags']))
+wtTweets.saveAsTextFile(folder_out+"_wt")
+'''
