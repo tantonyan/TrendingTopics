@@ -1,0 +1,77 @@
+
+
+CREATE TABLE world_day_tweets (
+    dayslot int,
+    topic text,
+    count int,
+    PRIMARY KEY (dayslot, count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+CREATE TABLE world_hour_tweets (
+    hourslot int,
+    topic text,
+    count int,
+    PRIMARY KEY (hourslot, count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+CREATE TABLE world_minute_tweets (
+    minuteslot int,
+    topic text,
+    count int,
+    PRIMARY KEY (minuteslot, count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+
+CREATE TABLE country_day_tweets (
+    dayslot int,
+    country text,
+    topic text,
+    count int,
+    PRIMARY KEY ((dayslot, country), count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+CREATE TABLE country_hour_tweets (
+    hourslot int,
+    country text,
+    topic text,
+    count int,
+    PRIMARY KEY ((hourslot, country), count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+CREATE TABLE country_minute_tweets (
+    minuteslot int,
+    country text,
+    topic text,
+    count int,
+    PRIMARY KEY ((minuteslot, country), count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+
+CREATE TABLE city_day_tweets (
+    dayslot int,
+    country text,
+    city text,
+    topic text,
+    count int,
+    PRIMARY KEY ((dayslot, country, city), count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+CREATE TABLE city_hour_tweets (
+    hourslot int,
+    country text,
+    city text,
+    topic text,
+    count int,
+    PRIMARY KEY ((hourslot, country, city), count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+CREATE TABLE city_minute_tweets (
+    minuteslot int,
+    country text,
+    city text,
+    topic text,
+    count int,
+    PRIMARY KEY ((minuteslot, country, city), count)
+) WITH CLUSTERING ORDER BY (count DESC)
+
+
