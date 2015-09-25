@@ -81,7 +81,8 @@ CREATE TABLE city_minute_trends (
 CREATE TABLE tweet_locations (
     country text,
     city text,
-    lat_long tuple<float, float>,
+    lat float,
+    long float,
     time_ms bigint,
     PRIMARY KEY ((country, city), time_ms)
 ) WITH CLUSTERING ORDER BY (time_ms DESC);
