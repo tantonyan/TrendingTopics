@@ -3,82 +3,101 @@ CREATE KEYSPACE IF NOT EXISTS trends WITH REPLICATION = {'class': 'SimpleStrateg
 
 USE trends;
 
+DROP TABLE IF EXISTS world_day_trends;
 CREATE TABLE world_day_trends (
     dayslot int,
     topic text,
     count int,
-    PRIMARY KEY (dayslot, count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY (dayslot, topic)
+);
 
+DROP TABLE IF EXISTS world_hour_trends;
 CREATE TABLE world_hour_trends (
     hourslot int,
     topic text,
     count int,
-    PRIMARY KEY (hourslot, count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY (hourslot, topic)
+);
 
+DROP TABLE IF EXISTS world_minute_trends;
 CREATE TABLE world_minute_trends (
-    minuteslot int,
+    minuteslot bigint,
     topic text,
     count int,
-    PRIMARY KEY (minuteslot, count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY (minuteslot, topic)
+);
 
 
+DROP TABLE IF EXISTS country_day_trends;
 CREATE TABLE country_day_trends (
     dayslot int,
     country text,
     topic text,
     count int,
-    PRIMARY KEY ((dayslot, country), count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY ((dayslot, country), topic)
+);
 
+DROP TABLE IF EXISTS country_hour_trends;
 CREATE TABLE country_hour_trends (
     hourslot int,
     country text,
     topic text,
     count int,
-    PRIMARY KEY ((hourslot, country), count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY ((hourslot, country), topic)
+);
 
+DROP TABLE IF EXISTS country_minute_trends;
 CREATE TABLE country_minute_trends (
-    minuteslot int,
+    minuteslot bigint,
     country text,
     topic text,
     count int,
-    PRIMARY KEY ((minuteslot, country), count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY ((minuteslot, country), topic)
+);
 
 
+DROP TABLE IF EXISTS city_day_trends;
 CREATE TABLE city_day_trends (
     dayslot int,
     country text,
     city text,
     topic text,
     count int,
-    PRIMARY KEY ((dayslot, country, city), count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY ((dayslot, country, city), topic)
+);
 
+DROP TABLE IF EXISTS city_hour_trends;
 CREATE TABLE city_hour_trends (
     hourslot int,
     country text,
     city text,
     topic text,
     count int,
-    PRIMARY KEY ((hourslot, country, city), count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY ((hourslot, country, city), topic)
+);
 
+DROP TABLE IF EXISTS city_minute_trends;
 CREATE TABLE city_minute_trends (
-    minuteslot int,
+    minuteslot bigint,
     country text,
     city text,
     topic text,
     count int,
-    PRIMARY KEY ((minuteslot, country, city), count)
-) WITH CLUSTERING ORDER BY (count DESC);
+    PRIMARY KEY ((minuteslot, country, city), topic)
+);
 
 
-CREATE TABLE tweet_locations (
+DROP TABLE IF EXISTS tweet_locations_country;
+CREATE TABLE tweet_locations_country (
+    country text,
+    lat float,
+    long float,
+    time_ms bigint,
+    PRIMARY KEY (country, time_ms)
+) WITH CLUSTERING ORDER BY (time_ms DESC);
+
+DROP TABLE IF EXISTS tweet_locations_city;
+CREATE TABLE tweet_locations_city (
     country text,
     city text,
     lat float,
