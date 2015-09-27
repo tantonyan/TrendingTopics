@@ -109,7 +109,7 @@ tweetLocationsCity = tweetsWithCoords.map(lambda tweet : (tweet['country'], twee
 tweetLocationsCity.saveToCassandra(keyspace, "tweet_locations_city") # key: ((country, city), time_ms)
 
 tweetLocationsCountry = tweetsWithCoords.map(lambda tweet : (tweet['country'], tweet['time_ms'], tweet['coords'][1], tweet['coords'][0]))
-tweetLocationsCountry.saveToCassandra(keyspace, "tweet_locations_country") # key: ((country, city), time_ms)
+tweetLocationsCountry.saveToCassandra(keyspace, "tweet_locations_country") # key: (country, time_ms)
 
 # tag related work
 tweetsWithTags = tweets.filter(lambda tweet : (tweet is not None) and ('tags' in tweet) and (len(tweet['tags']) > 0))
