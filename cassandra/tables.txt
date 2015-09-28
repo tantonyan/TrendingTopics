@@ -11,14 +11,6 @@ CREATE TABLE world_day_trends (
     PRIMARY KEY (dayslot, topic)
 );
 
-DROP TABLE IF EXISTS world_day_top_trends;
-CREATE TABLE world_day_top_trends (
-    dayslot int,
-    topic text,
-    count int,
-    PRIMARY KEY (dayslot, topic)
-);
-
 DROP TABLE IF EXISTS world_hour_trends;
 CREATE TABLE world_hour_trends (
     hourslot int,
@@ -27,24 +19,8 @@ CREATE TABLE world_hour_trends (
     PRIMARY KEY (hourslot, topic)
 );
 
-DROP TABLE IF EXISTS world_hour_top_trends;
-CREATE TABLE world_hour_top_trends (
-    hourslot int,
-    topic text,
-    count int,
-    PRIMARY KEY (hourslot, topic)
-);
-
 DROP TABLE IF EXISTS world_minute_trends;
 CREATE TABLE world_minute_trends (
-    minuteslot bigint,
-    topic text,
-    count int,
-    PRIMARY KEY (minuteslot, topic)
-);
-
-DROP TABLE IF EXISTS world_minute_top_trends;
-CREATE TABLE world_minute_top_trends (
     minuteslot bigint,
     topic text,
     count int,
@@ -61,15 +37,6 @@ CREATE TABLE country_day_trends (
     PRIMARY KEY ((dayslot, country), topic)
 );
 
-DROP TABLE IF EXISTS country_day_top_trends;
-CREATE TABLE country_day_top_trends (
-    dayslot int,
-    country text,
-    topic text,
-    count int,
-    PRIMARY KEY ((dayslot, country), topic)
-);
-
 DROP TABLE IF EXISTS country_hour_trends;
 CREATE TABLE country_hour_trends (
     hourslot int,
@@ -79,26 +46,8 @@ CREATE TABLE country_hour_trends (
     PRIMARY KEY ((hourslot, country), topic)
 );
 
-DROP TABLE IF EXISTS country_hour_top_trends;
-CREATE TABLE country_hour_top_trends (
-    hourslot int,
-    country text,
-    topic text,
-    count int,
-    PRIMARY KEY ((hourslot, country), topic)
-);
-
 DROP TABLE IF EXISTS country_minute_trends;
 CREATE TABLE country_minute_trends (
-    minuteslot bigint,
-    country text,
-    topic text,
-    count int,
-    PRIMARY KEY ((minuteslot, country), topic)
-);
-
-DROP TABLE IF EXISTS country_minute_top_trends;
-CREATE TABLE country_minute_top_trends (
     minuteslot bigint,
     country text,
     topic text,
@@ -117,16 +66,6 @@ CREATE TABLE city_day_trends (
     PRIMARY KEY ((dayslot, country, city), topic)
 );
 
-DROP TABLE IF EXISTS city_day_top_trends;
-CREATE TABLE city_day_top_trends (
-    dayslot int,
-    country text,
-    city text,
-    topic text,
-    count int,
-    PRIMARY KEY ((dayslot, country, city), topic)
-);
-
 DROP TABLE IF EXISTS city_hour_trends;
 CREATE TABLE city_hour_trends (
     hourslot int,
@@ -137,28 +76,8 @@ CREATE TABLE city_hour_trends (
     PRIMARY KEY ((hourslot, country, city), topic)
 );
 
-DROP TABLE IF EXISTS city_hour_top_trends;
-CREATE TABLE city_hour_top_trends (
-    hourslot int,
-    country text,
-    city text,
-    topic text,
-    count int,
-    PRIMARY KEY ((hourslot, country, city), topic)
-);
-
 DROP TABLE IF EXISTS city_minute_trends;
 CREATE TABLE city_minute_trends (
-    minuteslot bigint,
-    country text,
-    city text,
-    topic text,
-    count int,
-    PRIMARY KEY ((minuteslot, country, city), topic)
-);
-
-DROP TABLE IF EXISTS city_minute_top_trends;
-CREATE TABLE city_minute_top_trends (
     minuteslot bigint,
     country text,
     city text,

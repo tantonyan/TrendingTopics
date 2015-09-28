@@ -1,6 +1,6 @@
 #!/bin/bash
 
-log="/home/ubuntu/cron/camus.log"
+log="/home/ubuntu/TrendingTopics/cron/camus.log"
 
 workdir="/usr/local/hadoop/etc/hadoop/"
 HADOOP="/usr/local/hadoop/bin/hadoop"
