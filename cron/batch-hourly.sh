@@ -1,6 +1,6 @@
 #!/bin/bash
 
-log="/home/ubuntu/TrendingTopics/cron/batch-hourly.log"
+log="/home/ubuntu/TrendingTopics/cron/logs/batch-hourly.log"
 workdir="/home/ubuntu/TrendingTopics/spark"
 cd $workdir
 
@@ -26,5 +26,5 @@ do
     path=$path_main$p
     $ss $arg_master $arg_packages $arg_conf $script $path >> $log
 done
-echo "\n-- -- -- -- -- --\n" >> $log
+echo "-- -- -- -- -- --" >> $log
 #/usr/local/spark/bin/spark-submit --master spark://172.31.20.120:7077 --packages TargetHolding/pyspark-cassandra:0.1.5 --conf spark.cassandra.connection.host=172.31.46.91 hourly-run.py $path
