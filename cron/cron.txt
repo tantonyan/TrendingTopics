@@ -1,7 +1,7 @@
 # m h  dom mon dow   command
-23,53 * * * * /home/ubuntu/TrendingTopics/cron/run-camus.sh >> /home/ubuntu/TrendingTopics/cron/logs/cron-camus.log 2>&1
+00,30 * * * * /home/ubuntu/TrendingTopics/cron/run-camus.sh >> /home/ubuntu/TrendingTopics/cron/logs/cron-camus.log 2>&1
 
-59 * * * * /home/ubuntu/TrendingTopics/cron/batch-hourly.sh >> /home/ubuntu/TrendingTopics/cron/logs/cron-batch-h.log 2>&1
-30 3 * * * /home/ubuntu/TrendingTopics/cron/batch-daily.sh >> /home/ubuntu/TrendingTopics/cron/logs/cron-batch-d.log 2>&1
+02 * * * * /home/ubuntu/TrendingTopics/cron/batch-hourly.sh >> /home/ubuntu/TrendingTopics/cron/logs/cron-batch-h.log 2>&1
+32 3 * * * /home/ubuntu/TrendingTopics/cron/batch-daily.sh >> /home/ubuntu/TrendingTopics/cron/logs/cron-batch-d.log 2>&1
 
 57 5 * * 1 /home/ubuntu/TrendingTopics/cron/logCleaner.sh >> /dev/null 2>&1
