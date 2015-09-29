@@ -1,0 +1,65 @@
+{% extends "base.html" %} <!--this means that you are extending the base tempate -->
+{% block title %}Daily Trends{% endblock %}
+{% block location %} <!-- this is the name of the block below -->
+        <div class="row" style="height:50vh;">
+                <div class="col-md-4 col-md-offset-4" style="margin-top:10vh;">
+                        <form action"daily" method="POST">
+                                <div class="form-group text-center">
+                                        <label style="font-weight:300; font-size:36px;">Type in a country and city</label>
+                                        <br /><br />
+                                        <input type="text" class="form-control" id="country" name="country" placeholder="US">
+                                        <input type="text" class="form-control" id="city" name="city" placeholder="New York">
+                                        <select class="form-control" name="date">
+                                                <option value="20150927">2015-09-27</option>
+                                                <option value="20150926">2015-09-26</option>
+                                                <option value="20150926">2015-09-25</option>
+                                                <option value="20150917">2015-09-17</option>
+                                        </select>
+                                        <br /><br />
+
+                                        <button type="submit" value="Send" name="daily-container" class="btn btn-default id-submit">Submit</button>
+                                </div>
+                        </form>
+                </div>
+        </div>
+
+{% endblock %}
+
+{% block trend %}
+ {% if output %}
+<div class="container">
+      <div class="starter-template">
+        <div class="row" style="height:100vh;">
+                <div class="col-md-10 col-md-offset-1">
+		<h2>Number of trends: {{totalTrends}}{% if totalTweets and totalTweets>0 %} Total tweets: {{totalTweets}}{% endif %}</h2>
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>dayslot</th>
+                          {% if fields>=1 %}<th>country</th>{% endif %}
+                          {% if fields==2 %}<th>city</th>{% endif %}
+                          <th>topic</th>
+                          <th>count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+			{% set sort_on = request.args.sort_on|default('count') %}
+                        {% for val in output|sort(attribute=sort_on, reverse=True) %}
+                        <tr>
+                          <td>{{val.dayslot}}</td>
+                          {% if fields>=1 %}<td>{{val.country}}</td>{% endif %}
+                          {% if fields==2 %}<td>{{val.city}}</td>{% endif %}
+                          <td>{{val.topic|e}}</td>
+                          <td>{{val.count}}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                </div>
+        </div>
+      </div>
+
+    </div>
+
+ {% endif %}
+{% endblock %}

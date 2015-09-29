@@ -4,15 +4,16 @@ log="/home/ubuntu/TrendingTopics/cron/logs/batch-hourly.log"
 workdir="/home/ubuntu/TrendingTopics/spark"
 cd $workdir
 
-# run the hourly spark script for the current and past 2 hours (3 hour slots)
+# the script is a cron job set to start at the beginning (02 minutes) of each hour
+# run the hourly spark script for the past 3 hours (3 hour slots)
 
 echo `date` >> $log
 
 path_main="/camus/topics/twitter-all-json/hourly/"
 
-path0=`date +%Y/%m/%d/%H`
-path1=`date --date="1 hours ago" +%Y/%m/%d/%H`
-path2=`date --date="2 hours ago" +%Y/%m/%d/%H`
+path0=`date --date="1 hours ago" +%Y/%m/%d/%H`
+path1=`date --date="2 hours ago" +%Y/%m/%d/%H`
+path2=`date --date="3 hours ago" +%Y/%m/%d/%H`
 
 ss="/usr/local/spark/bin/spark-submit"
 arg_master="--master spark://172.31.20.120:7077"

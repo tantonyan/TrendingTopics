@@ -10,7 +10,7 @@ hdfs = "hdfs://ec2-54-209-187-157.compute-1.amazonaws.com:9000"
 path = ""
 keyspace = "trends"
 # the ttl option doesn't work... https://github.com/TargetHolding/pyspark-cassandra/issues/50
-hourlyTTL = 24 * 60 * 60 * 1000L # The time to live as milliseconds
+TTL_days = 1 #24 * 60 * 60 * 1000L # The time to live as milliseconds
 #topCount = 20 # to be used when inserting into top tables -- will spead up the reads later
 
 # can take the path to a folder/file as an argument to be added to the hdfs path
@@ -103,88 +103,46 @@ def tweet_from_json_line(json_line):
 # main work...
 conf = (SparkConf().setAppName("Tweets-Hourly"))
 sc = SparkContext(conf = conf)
+
+write_conf = WriteConf(sc)
+# Hack to make saveToCassandra with TTL work, due to a bug in TargetHolding's saveToCassandra.
+# Keep only the keys that have non-None values.
+write_conf.__dict__ = {key: write_conf.__dict__[key] for key in write_conf.__dict__ if
+                       write_conf.__dict__[key] is not None}
+write_conf.ttl = int(datetime.timedelta(days=TTL_days).total_seconds())
+
 tweet_jsons = sc.textFile(folder_in)
 
 tweets = tweet_jsons.map(tweet_from_json_line).persist()
 
-# location related work
-'''
-tweetsWithCoords = tweets.filter(lambda tweet : (tweet is not None) and ('coords' in tweet) and (len(tweet['coords']) > 0)).persist()
+totalTweetCount = tweets.count()
+tweet = tweets.first()
+hourslot = tweet['hourSlot']
 
-tweetLocationsCity = tweetsWithCoords.map(lambda tweet : (tweet['country'], tweet['city'], tweet['time_ms'], tweet['coords'][1], tweet['coords'][0]))
-tweetLocationsCity.saveToCassandra(keyspace, "tweet_locations_city") # key: ((country, city), time_ms)
-
-tweetLocationsCountry = tweetsWithCoords.map(lambda tweet : (tweet['country'], tweet['time_ms'], tweet['coords'][1], tweet['coords'][0]))
-tweetLocationsCountry.saveToCassandra(keyspace, "tweet_locations_country") # key: (country, time_ms)
-'''
 # tag related work
 tweetsWithTags = tweets.filter(lambda tweet : (tweet is not None) and ('tags' in tweet) and (len(tweet['tags']) > 0))
+
+taggedTweetCount = tweetsWithTags.count()
+counts = sc.parallelize([{"hourslot":hourslot, "count_type":"total", "count":totalTweetCount}, {"hourslot":hourslot, "count_type":"tagged", "count":taggedTweetCount}])
+counts.saveToCassandra(keyspace, "world_hour_counts")
 
 tagsAsValue = tweetsWithTags.map(lambda tweet : ((tweet['hourSlot'], tweet['country'], tweet['city']), tweet['tags']))
 singleTagTuples = tagsAsValue.flatMapValues(lambda x : x).persist() # ((daySlot, hourSlot, minuteSlot, country, city), tag)
 
 # city 
-'''
-tagCityDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
-cdt = tagCityDailyCount.map(lambda ((d, cc, c, t), count) : (d, cc, c, t, count)) # flatMap(lambda x : x).saveToCassandra didn't work...
-cdt.saveToCassandra(keyspace, "city_day_trends") # key: ((dayslot, country, city), topic)
-#top_cdt = sc.parallelize(cdt.takeOrdered(topCount, key = lambda x: -x[4])) # takeOrdered returns a list, not an RDD, so need to parallelize
-#top_cdt.saveToCassandra(keyspace, "city_day_top_trends") # top trends only
-'''
 tagCityHourlyCount = singleTagTuples.map(lambda ((h, cc, c), t) : ((h, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
 cht = tagCityHourlyCount.map(lambda ((h, cc, c, t), count) : (h, cc, c, t, count))
-cht.saveToCassandra(keyspace, "city_hour_trends")#, ttl=hourlyTTL) # key: ((hourslot, country, city), topic)
+#cht.saveToCassandra(keyspace, "city_hour_trends")#, ttl=hourlyTTL) # key: ((hourslot, country, city), topic)
+cht.saveToCassandra(keyspace, "city_hour_trends", write_conf=write_conf)#, ttl=hourlyTTL) # key: ((hourslot, country, city), topic)
 #top_cht = sc.parallelize(cht.takeOrdered(topCount, key = lambda x: -x[4]))
 #top_cht.saveToCassandra(keyspace, "city_hour_top_trends") # top hourly topics
-'''
-tagCityMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, cc, c, t), 1)).reduceByKey(lambda x, y: x + y) 
-cmt = tagCityMinuteCount.map(lambda ((m, cc, c, t), count) : (m, cc, c, t, count))
-cmt.saveToCassandra(keyspace, "city_minute_trends") # key: ((minuteslot, country, city), topic)
-#tagCityMinuteCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "city_minute_top_trends")
 
-# country
-tagCountryDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
-ccdc = tagCountryDailyCount.map(lambda ((d, cc, t), count) : (d, cc, t, count))
-ccdc.saveToCassandra(keyspace, "country_day_trends") # key: ((dayslot, country), topic)
-#tagCountryDailyCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "country_day_top_trends")
-'''
 tagCountryHourlyCount = singleTagTuples.map(lambda ((h, cc, c), t) : ((h, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
 cchc = tagCountryHourlyCount.map(lambda ((h, cc, t), count) : (h, cc, t, count))
-cchc.saveToCassandra(keyspace, "country_hour_trends")#, ttl=hourlyTTL) # key: ((hourslot, country), topic)
+cchc.saveToCassandra(keyspace, "country_hour_trends", write_conf=write_conf)#, ttl=hourlyTTL) # key: ((hourslot, country), topic)
 #tagCountryHourlyCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "country_hour_top_trends")
-'''
-tagCountryMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
-cchc = tagCountryMinuteCount.map(lambda ((m, cc, t), count) : (m, cc, t, count))
-cchc.saveToCassandra(keyspace, "country_minute_trends") # key: ((minuteslot, country), topic)
-#tagCountryMinuteCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "country_minute_top_trends")
 
-# world
-tagWorldDailyCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((d, t), 1)).reduceByKey(lambda x, y: x + y) 
-wdc = tagWorldDailyCount.map(lambda ((d, t), count) : (d, t, count))
-wdc.saveToCassandra(keyspace, "world_day_trends") # key: (dayslot, topic)
-#tagWorldDailyCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "world_day_top_trends")
-'''
 tagWorldHourlyCount = singleTagTuples.map(lambda ((h, cc, c), t) : ((h, t), 1)).reduceByKey(lambda x, y: x + y) 
 whc = tagWorldHourlyCount.map(lambda ((h, t,), count) : (h, t, count))
-whc.saveToCassandra(keyspace, "world_hour_trends")#, ttl=hourlyTTL) # key: (hourslot, topic)
+whc.saveToCassandra(keyspace, "world_hour_trends", write_conf=write_conf)#, ttl=hourlyTTL) # key: (hourslot, topic)
 #tagWorldHourlyCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "world_hour_trends")
-'''
-tagWorldMinuteCount = singleTagTuples.map(lambda ((d, h, m, cc, c), t) : ((m, t), 1)).reduceByKey(lambda x, y: x + y) 
-wmc = tagWorldMinuteCount.map(lambda ((m, t), count) : (m, t, count))
-wmc.saveToCassandra(keyspace, "world_minute_trends") # key: (minuteslot, topic)
-#tagWorldMinuteCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "world_minute_trends")
-'''
-# 
-'''
-folder_out = folder_in + "_out2_"
-tagCityDailyCount.saveAsTextFile(folder_out+"D_city")
-tagCityHourlyCount.saveAsTextFile(folder_out+"H_city")
-tagCityMinuteCount.saveAsTextFile(folder_out+"M_city")
-tagCountryDailyCount.saveAsTextFile(folder_out+"D_country")
-tagCountryHourlyCount.saveAsTextFile(folder_out+"H_country")
-tagCountryMinuteCount.saveAsTextFile(folder_out+"M_country")
-tagWorldDailyCount.saveAsTextFile(folder_out+"D_world")
-tagWorldHourlyCount.saveAsTextFile(folder_out+"H_world")
-tagWorldMinuteCount.saveAsTextFile(folder_out+"M_world")
-#singleTagTuples.saveAsTextFile(folder_out)
-'''

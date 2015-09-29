@@ -1,15 +1,60 @@
 from flask import jsonify 
+from flask import request
+from flask import render_template
 from app import app
 from cassandra.cluster import Cluster
+from operator import itemgetter, attrgetter
 
 cluster = Cluster(['cassandra.trendinghashtags.net'])
 session = cluster.connect('trends')
+topCount = 20
 
 @app.route('/')
 @app.route('/index')
+@app.route('/live')
 def index():
-   return "Hello, World!"
+   return render_template("live.html")
 
+@app.route('/daily')
+def email():
+ return render_template("daily.html")
+
+@app.route("/daily", methods=['POST'])
+def daily_post():
+ country = request.form["country"] 
+ city = request.form["city"] 
+ date = request.form["date"]
+ 
+ stmt_main = "SELECT * FROM "# and country=%s and city=%s"
+ table = "world_day_trends"
+ params = [int(date)]
+ stmt_0 = " WHERE dayslot=%s"
+ stmt_1 = ""
+ fCount = 0
+ if (len(country) > 0):
+    stmt_1 = " and country=%s"
+    table = "country_day_trends"
+    params.append(country)
+    fCount = 1
+    if (len(city) > 0):
+        stmt_1 += " and city=%s"
+        table = "city_day_trends" 
+	params.append(city)
+        fCount = 2
+ stmt = stmt_main + table + stmt_0 + stmt_1
+ response = session.execute(stmt, parameters=params)
+ response_list = []
+ for val in response:
+     response_list.append(val)
+ if (fCount == 2):
+     jsonresponse = [{"dayslot": x.dayslot, "country": x.country, "city": x.city, "topic": x.topic, "count": x.count} for x in response_list]
+ elif (fCount == 1):
+     jsonresponse = [{"dayslot": x.dayslot, "country": x.country, "topic": x.topic, "count": x.count} for x in response_list]
+ else:
+     jsonresponse = [{"dayslot": x.dayslot, "topic": x.topic, "count": x.count} for x in response_list]
+ rCount = len(jsonresponse)
+ sortedJson = sorted(list(jsonresponse), key=itemgetter('count'), reverse=True)[:topCount]
+ return render_template("daily.html", output=sortedJson, fields=fCount, totalTrends=rCount)
 
 @app.route('/api/topics-day/')
 @app.route('/api/topics-day/<dayslot>/')

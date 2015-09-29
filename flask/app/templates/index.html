@@ -1,0 +1,18 @@
+<html>
+ <head>
+    <title>{{title}} - microblog</title>
+ </head>
+ <body>
+    {% if user %}
+    <h1>Hello, {{user.nickname}}!</h1>
+    {% else %}
+    <h1>Hello, Insight Fellow!</h1>
+    {% endif %}
+
+    <ul>
+    {% for num in mylist %}
+        <li>{{num}}</li>
+    {% endfor %}
+    </ul>
+ </body>
+</html>

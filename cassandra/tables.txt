@@ -3,6 +3,22 @@ CREATE KEYSPACE IF NOT EXISTS trends WITH REPLICATION = {'class': 'SimpleStrateg
 
 USE trends;
 
+DROP TABLE IF EXISTS world_hour_counts;
+CREATE TABLE world_hour_counts(
+    hourslot int,
+    count_type text,
+    count int,
+    PRIMARY KEY (hourslot, count_type)
+);
+
+DROP TABLE IF EXISTS world_day_counts;
+CREATE TABLE world_day_counts(
+    dayslot int,
+    count_type text,
+    count int,
+    PRIMARY KEY (dayslot, count_type)
+);
+
 DROP TABLE IF EXISTS world_day_trends;
 CREATE TABLE world_day_trends (
     dayslot int,
