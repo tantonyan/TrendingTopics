@@ -2,6 +2,7 @@
 
 log="/home/ubuntu/TrendingTopics/cron/logs/batch-daily.log"
 workdir="/home/ubuntu/TrendingTopics/spark"
+
 cd $workdir
 
 echo `date` >> $log
@@ -13,6 +14,7 @@ if [ $# -gt 0 ]; then
 fi
 
 ./move-daily-tweets.sh $date >> $log
+
 
 path_main="/tweets/twitter-json/daily/"
 

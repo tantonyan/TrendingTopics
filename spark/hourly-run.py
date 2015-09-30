@@ -4,6 +4,7 @@ import sys
 import datetime
 
 import pyspark_cassandra
+from pyspark_cassandra.conf import WriteConf
 
 
 hdfs = "hdfs://ec2-54-209-187-157.compute-1.amazonaws.com:9000"
@@ -123,8 +124,6 @@ hourslot = tweet['hourSlot']
 tweetsWithTags = tweets.filter(lambda tweet : (tweet is not None) and ('tags' in tweet) and (len(tweet['tags']) > 0))
 
 taggedTweetCount = tweetsWithTags.count()
-counts = sc.parallelize([{"hourslot":hourslot, "count_type":"total", "count":totalTweetCount}, {"hourslot":hourslot, "count_type":"tagged", "count":taggedTweetCount}])
-counts.saveToCassandra(keyspace, "world_hour_counts")
 
 tagsAsValue = tweetsWithTags.map(lambda tweet : ((tweet['hourSlot'], tweet['country'], tweet['city']), tweet['tags']))
 singleTagTuples = tagsAsValue.flatMapValues(lambda x : x).persist() # ((daySlot, hourSlot, minuteSlot, country, city), tag)
@@ -145,4 +144,10 @@ cchc.saveToCassandra(keyspace, "country_hour_trends", write_conf=write_conf)#, t
 tagWorldHourlyCount = singleTagTuples.map(lambda ((h, cc, c), t) : ((h, t), 1)).reduceByKey(lambda x, y: x + y) 
 whc = tagWorldHourlyCount.map(lambda ((h, t,), count) : (h, t, count))
 whc.saveToCassandra(keyspace, "world_hour_trends", write_conf=write_conf)#, ttl=hourlyTTL) # key: (hourslot, topic)
+
+totalTrendCount = whc.count()
+counts = sc.parallelize([{"hourslot":hourslot, "count_type":"total", "count":totalTweetCount}, 
+			{"hourslot":hourslot, "count_type":"tagged", "count":taggedTweetCount},
+			{"hourslot":hourslot, "count_type":"trends", "count":totalTrendCount}])
+counts.saveToCassandra(keyspace, "world_hour_counts", write_conf=write_conf)
 #tagWorldHourlyCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "world_hour_trends")
