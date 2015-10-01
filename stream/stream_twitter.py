@@ -108,7 +108,9 @@ def userData(item):
     if ('user' in item) and isinstance(item['user'], dict):
 	if 'id_str' in item['user']:
 	    uData['id_str'] = item['user']['id_str']
-	
+	if 'screen_name' in item['user']:
+	    uData['screen_name'] = item['user']['screen_name']
+
 	if 'location' in item['user']:
 	    uData['location'] = item['user']['location']
 
@@ -119,7 +121,7 @@ def kafkaItem(item):
     line = {}
     if ('id_str' not in item) or ('timestamp_ms' not in item) or('text' not in item): 
 	# other message (limit, etc.)
-	print("Received a non-tweet item: \n\t"+str(item))
+#	print("Received a non-tweet item: \n\t"+str(item))
         return None 
 
     try:
@@ -138,6 +140,8 @@ def kafkaItem(item):
     return line
 
 # raw iterable stream object:
+#part_num = len(partitionIds)
+#part_id = 0 # we will specify the partition to be used -- makes easier for kafka
 item_enc = ''
 for item in r:
 #    print(item)

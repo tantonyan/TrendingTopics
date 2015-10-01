@@ -30,6 +30,7 @@ CREATE TABLE rt_tweet_locations_city (
 DROP TABLE IF EXISTS rt_tweet_world;
 CREATE TABLE rt_tweet_world (
     topic text,
+    user text,
     time_ms bigint,
     tweet text,
     PRIMARY KEY (topic, time_ms)
@@ -39,6 +40,7 @@ DROP TABLE IF EXISTS rt_tweet_country;
 CREATE TABLE rt_tweet_country (
     country text,
     topic text,
+    user text,
     time_ms bigint,
     tweet text,
     PRIMARY KEY ((country, topic), time_ms)
@@ -49,6 +51,7 @@ CREATE TABLE rt_tweet_city (
     country text,
     city text,
     topic text,
+    user text,
     time_ms bigint,
     tweet text,
     PRIMARY KEY ((country, city, topic), time_ms)

@@ -3,6 +3,12 @@ import json
 import datetime
 from cassandra.cluster import Cluster
 
+# get poster's screen_name 
+def userName(item):
+    if ('user' in item) and isinstance(item['user'], dict):
+	if 'screen_name' in item['user']:
+	    return item['user']['screen_name']
+    return "Anonymous"
 # get poster's user
 def userId(item):
     if ('user' in item) and isinstance(item['user'], dict):
@@ -48,7 +54,8 @@ def tweet_from_json_line(json_line):
 
     tweet = {}
     tweet['t_id'] = item['id_str']
-    tweet['u_id'] = userId(item) # just the userId is enough
+#    tweet['u_id'] = userId(item) # just the userId is enough
+    tweet['userName'] = userId(item) # just the userName is enough
     tweet['coords'] = item['coordinates'] # list [longitude,latitude]
     tweet['tags'] = trendItems(item) # will have the combined list of hashtags and user mentions
     tweet['city'] = tweetCity(item)
@@ -80,15 +87,15 @@ def insert_locations(tweet):
     session.execute(cql_insert, [tweet['country'], tweet['city'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
 
 def insert_tweet_text(tweet, topic):
-    cql_insert = """INSERT INTO rt_tweet_world (topic, time_ms, tweet)
+    cql_insert = """INSERT INTO rt_tweet_world (topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s)"""
-    session.execute(cql_insert, [topic, tweet['time_ms'], tweet['text']])
-    cql_insert = """INSERT INTO rt_tweet_city (country, city, topic, time_ms, tweet)
+    session.execute(cql_insert, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+    cql_insert = """INSERT INTO rt_tweet_city (country, city, topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s, %s)"""
-    session.execute(cql_insert, [tweet['country'], tweet['city'], topic, tweet['time_ms'], tweet['text']])
-    cql_insert = """INSERT INTO rt_tweet_country (country, topic, time_ms, tweet)
+    session.execute(cql_insert, [tweet['country'], tweet['city'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+    cql_insert = """INSERT INTO rt_tweet_country (country, topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s)"""
-    session.execute(cql_insert, [tweet['country'], topic, tweet['time_ms'], tweet['text']])
+    session.execute(cql_insert, [tweet['country'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
 
 
 class JsonSplitterBolt(SimpleBolt):
