@@ -103,23 +103,4 @@ CREATE TABLE city_minute_trends (
 );
 
 
-DROP TABLE IF EXISTS tweet_locations_country;
-CREATE TABLE tweet_locations_country (
-    country text,
-    lat float,
-    long float,
-    time_ms bigint,
-    PRIMARY KEY (country, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC);
-
-DROP TABLE IF EXISTS tweet_locations_city;
-CREATE TABLE tweet_locations_city (
-    country text,
-    city text,
-    lat float,
-    long float,
-    time_ms bigint,
-    PRIMARY KEY ((country, city), time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC);
-
 

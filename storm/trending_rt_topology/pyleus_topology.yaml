@@ -1,0 +1,43 @@
+
+name: trending_rt_topology
+
+workers: 3
+
+topology:
+
+    - spout:
+        name: kafka-json-tweets
+        type: kafka
+        options:
+            # The Kafka topic to stream from.
+            # Required.
+            topic: twitter-all-json2
+
+            # ZooKeeper connection string. Comma-separated list of ZooKeeper
+            # servers.
+            # Required.
+            zk_hosts: ec2-54-209-187-157.compute-1.amazonaws.com:2181,ec2-54-175-248-109.compute-1.amazonaws.com:2181,ec2-54-209-182-51.compute-1.amazonaws.com:2181,ec2-54-209-21-181.compute-1.amazonaws.com:2181
+
+            # Root path in ZooKeeper to store consumer offsets.
+            # Defaults to: /pyleus-kafka-offsets/<topology name>
+            zk_root: /pyleus-kafka-offsets/trending_rt_topology
+
+            # Kafka consumer ID.
+            # Defaults to: pyleus-<topology name>
+            consumer_id: storm_rt
+
+            # Whether the initial offset should be that specified by
+            # start_offset_time (true) or the head of the stream (false).
+            # Defaults to false.
+            from_start: false
+
+            # support binary data like google protobuf
+            binary_data: true
+
+    - bolt:
+        name: kafka-json-splitter
+        module: trending_rt_topology.json-splitter_bolt
+        groupings:
+            - shuffle_grouping: kafka-json-tweets
+
+

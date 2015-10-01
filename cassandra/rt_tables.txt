@@ -1,0 +1,55 @@
+USE trends;
+
+DROP TABLE IF EXISTS rt_tweet_locations_world;
+CREATE TABLE rt_tweet_locations_world (
+    time_ms bigint,
+    lat float,
+    long float,
+    PRIMARY KEY (time_ms)
+) WITH default_time_to_live = 30;
+
+DROP TABLE IF EXISTS rt_tweet_locations_country;
+CREATE TABLE rt_tweet_locations_country (
+    country text,
+    time_ms bigint,
+    lat float,
+    long float,
+    PRIMARY KEY (country, time_ms)
+) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 30;
+
+DROP TABLE IF EXISTS rt_tweet_locations_city;
+CREATE TABLE rt_tweet_locations_city (
+    country text,
+    city text,
+    time_ms bigint,
+    lat float,
+    long float,
+    PRIMARY KEY ((country, city), time_ms)
+) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 30;
+
+DROP TABLE IF EXISTS rt_tweet_world;
+CREATE TABLE rt_tweet_world (
+    topic text,
+    time_ms bigint,
+    tweet text,
+    PRIMARY KEY (topic, time_ms)
+) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 60;
+
+DROP TABLE IF EXISTS rt_tweet_country;
+CREATE TABLE rt_tweet_country (
+    country text,
+    topic text,
+    time_ms bigint,
+    tweet text,
+    PRIMARY KEY ((country, topic), time_ms)
+) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 60;
+
+DROP TABLE IF EXISTS rt_tweet_city;
+CREATE TABLE rt_tweet_city (
+    country text,
+    city text,
+    topic text,
+    time_ms bigint,
+    tweet text,
+    PRIMARY KEY ((country, city, topic), time_ms)
+) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 60;
