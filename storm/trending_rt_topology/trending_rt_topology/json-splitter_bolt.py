@@ -36,6 +36,8 @@ def tweetCity(item):
 
 # parse the next raw text line into a tweet -- just the needed elements
 def tweet_from_json_line(json_line):
+#    item = json_line
+
     try:
         item = json.loads(json_line)
     except:
@@ -66,27 +68,27 @@ cluster = Cluster(['172.31.46.91'])
 session = cluster.connect('trends')
 
 # insert into the location tables
-def insert_locations(tweet, topic):
+def insert_locations(tweet):
     cql_insert = """INSERT INTO rt_tweet_locations_world (time_ms, lat, long)
 		    VALUES (%s, %s, %s)"""
-    session.execute(cql_insert, tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0]))
+    session.execute(cql_insert, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
     cql_insert = """INSERT INTO rt_tweet_locations_country (country, time_ms, lat, long)
 		    VALUES (%s, %s, %s, %s)"""
-    session.execute(cql_insert, tweet['country'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0]))
+    session.execute(cql_insert, [tweet['country'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
     cql_insert = """INSERT INTO rt_tweet_locations_city (country, city, time_ms, lat, long)
 		    VALUES (%s, %s, %s, %s, %s)"""
-    session.execute(cql_insert, tweet['country'], tweet['city'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0]))
+    session.execute(cql_insert, [tweet['country'], tweet['city'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
 
-def insert_tweet_text(tweet):
+def insert_tweet_text(tweet, topic):
     cql_insert = """INSERT INTO rt_tweet_world (topic, time_ms, tweet)
 		    VALUES (%s, %s, %s)"""
-    session.execute(cql_insert, topic, tweet['time_ms'], tweet['tweet'])
+    session.execute(cql_insert, [topic, tweet['time_ms'], tweet['text']])
     cql_insert = """INSERT INTO rt_tweet_city (country, city, topic, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s, %s)"""
-    session.execute(cql_insert, tweet['country'], tweet['city'], topic, tweet['time_ms'], tweet['tweet'])
+    session.execute(cql_insert, [tweet['country'], tweet['city'], topic, tweet['time_ms'], tweet['text']])
     cql_insert = """INSERT INTO rt_tweet_country (country, topic, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s)"""
-    session.execute(cql_insert, tweet['country'], topic, tweet['time_ms'], tweet['tweet'])
+    session.execute(cql_insert, [tweet['country'], topic, tweet['time_ms'], tweet['text']])
 
 
 class JsonSplitterBolt(SimpleBolt):
@@ -94,8 +96,11 @@ class JsonSplitterBolt(SimpleBolt):
     OUTPUT_FIELDS = ['time_ms', 'country', 'city', 'topic']
 
     def process_tuple(self, tup):
-        tweet = tweet_from_json_line(tup.values(0))
+        json_tweet, = tup.values
+#	self.emit(['From Bolt', str(len(json_tweet)), str(type(json_tweet)), '---------------------'])
+        tweet = tweet_from_json_line(json_tweet)
         if tweet is None:
+	    self.emit(['From Bolt', "--- --- None --- ---", " --- --- parsing error ---", '---------------------'])
 	    return
 
 	if len(tweet['coords']) > 0: # tweet with a location found
