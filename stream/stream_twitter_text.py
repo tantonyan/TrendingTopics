@@ -1,4 +1,3 @@
-# not using this script - the json version is being used instead.
 # This scrip will take the following from a twitter stream and insert it into kafka as one line:
 #t_id	time_ms	coords	hashtags	u_ment	u_id	u_loc	pl_type	pl_name	pl_cc	pl_full_name	text
 

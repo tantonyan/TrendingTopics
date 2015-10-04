@@ -1,0 +1,80 @@
+{% extends "base.html" %} <!--this means that you are extending the base tempate -->
+{% block title %}Data Stats{% endblock %}
+{% block nav_active_stats %}active{% endblock %}
+{% block head %}
+
+<script type="text/javascript">
+var series_d = {{ series_d|safe }};
+var xAxis_d = {{ xAxis_d|safe }};
+var series_h = {{ series_h|safe }};
+var xAxis_h = {{ xAxis_h|safe }};
+
+var d_title = 'Daily tweets'
+var h_title = 'Hourly tweets'
+var sub_title = 'Source: Twitter streaming API'
+var y_title = 'Number of Tweets/Trends'
+var legend_v = {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'middle',
+            borderWidth: 0
+        }
+
+$(document).ready(function () {
+    $('#daily_stats').highcharts({
+        title: {
+            text: d_title,
+            x: -20 //center
+        },
+        subtitle: {
+            text: sub_title,
+            x: -20
+        },
+        xAxis: {categories: xAxis_d},
+        yAxis: {
+            title: {
+                text: y_title,
+            }
+        },
+        legend: legend_v,
+        series: series_d
+    });
+});
+$(document).ready(function () {
+    $('#hourly_stats').highcharts({
+        title: {
+            text: h_title,
+            x: -20 //center
+        },
+        subtitle: {
+            text: sub_title,
+            x: -20
+        },
+        xAxis: {categories: xAxis_h},
+        yAxis: {
+            title: {
+                text: y_title,
+            }
+        },
+        legend: legend_v,
+        series: series_h
+    });
+});
+		</script>
+{% endblock %}
+    
+{% block charts %} <!-- this is the name of the block below -->
+<script src="../static/js/highcharts.js"></script>
+<script src="../static/js/exporting.js"></script>
+
+<div id="daily_stats" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<div id="hourly_stats" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+{% endblock %}
+
+{% block tail %}
+<script>
+ $('#tweets_div').hide();
+</script>
+{% endblock %}
+

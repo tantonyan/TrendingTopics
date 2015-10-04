@@ -11,7 +11,7 @@ topology:
         options:
             # The Kafka topic to stream from.
             # Required.
-            topic: twitter-all-json2
+            topic: twitter-json
 
             # ZooKeeper connection string. Comma-separated list of ZooKeeper
             # servers.
@@ -30,6 +30,11 @@ topology:
             # start_offset_time (true) or the head of the stream (false).
             # Defaults to false.
             from_start: false
+
+            # The offset time to start with if from_start is true.
+            # Defaults to the earliest offset time in the stream.
+#            start_offset_time: 139897106
+            start_offset_time: 6392175
 
             # support binary data like google protobuf
             binary_data: true

@@ -1,17 +1,29 @@
 {% extends "base.html" %} <!--this means that you are extending the base tempate -->
 {% block title %}Live Trends{% endblock %}
+{% block nav_active_live %}active{% endblock %}
+{% block head %}
+<script type="text/javascript">
+  var rtLocURL = "/api/loc/"
+  var country = '';
+  var city = '';
+ {% if country %}
+  country =  {{ country|safe }};
+ {% endif %}
+ {% if city %}
+  city =  {{ city|safe }};
+ {% endif %}
+</script>
+{% endblock %}
 {% block location %} <!-- this is the name of the block below -->
-        <div class="row" style="height:40vh;">
-                <div class="col-md-4 col-md-offset-4" style="margin-top:10vh;">
-                        <form action"live" method="POST">
+        <div class="row" style="height:10vh;">
+                <div class="col-md-4 col-md-offset-4 daily_form_div" style="margin-top:10vh;">
+                        <form action="live" method="POST">
                                 <div class="form-group text-center">
-                                        <label style="font-weight:300; font-size:36px;">Type in a country and city</label>
-                                        <br /><br />
+                                        <label style="font-weight:300; font-size:24px;">Geo-Location:</label>
                                         <input type="text" class="form-control" id="country" name="country" placeholder="US">
                                         <input type="text" class="form-control" id="city" name="city" placeholder="New York">
-                                        <br /><br />
 
-                                        <button type="submit" value="Send" name="live-container" class="btn btn-default id-submit">Submit</button>
+                                        <button type="submit" value="Send" name="daily-container" class="btn btn-default id-submit">Submit</button>
                                 </div>
                         </form>
                 </div>
@@ -24,13 +36,12 @@
 <div class="container">
       <div class="starter-template">
         <div class="row" style="height:100vh;">
-                <div class="col-md-10 col-md-offset-1">
-		<h1>Showing {{output|length}} trends</h1>
+                <div class="col-md-10 col-md-offset-1 trend-results">
+		<h2>Number of trends: {{totalTrends}}{% if totalTweets and totalTweets>0 %} Total tweets: {{totalTweets}}{% endif %}</h2>
                     <table class="table">
                       <thead>
                         <tr>
-                          <th>dayslot</th>
-                          <th>country</th>
+                          {% if fields>=1 %}<th>country</th>{% endif %}
                           {% if fields==2 %}<th>city</th>{% endif %}
                           <th>topic</th>
                           <th>count</th>
@@ -40,8 +51,7 @@
 			{% set sort_on = request.args.sort_on|default('count') %}
                         {% for val in output|sort(attribute=sort_on, reverse=True) %}
                         <tr>
-                          <td>{{val.dayslot}}</td>
-                          <td>{{val.country}}</td>
+                          {% if fields>=1 %}<td>{{val.country}}</td>{% endif %}
                           {% if fields==2 %}<td>{{val.city}}</td>{% endif %}
                           <td>{{val.topic|e}}</td>
                           <td>{{val.count}}</td>
@@ -56,4 +66,39 @@
     </div>
 
  {% endif %}
+{% endblock %}
+
+{% block tail %}
+<script>
+var t_int = 1000;
+var addTweets = setInterval(liveTweets, t_int);
+var addIter = 0;
+var ttAPI = "/api/rt/";
+//var ttAPI = "/api/topics-day/20150928/";
+
+function liveTweets() {
+  $.getJSON( ttAPI, {
+//    format: "json"
+  })
+    .done(function( data ) {
+      $.each( data.tweets, function( i, item ) {
+      //$.each( data.country_day_trends, function( i, item ) {
+        //tweet_html = '<div class="tweet animated fadeInDown">by: ' + item.user + ' at: ' + item.time_ms + ' tag: <b>' + item.topic + '</b><br/>' + item.tweet + '</div>';
+        var d = new Date(item.time_ms);
+          tweet_html = '<div class="tweet">by: ' + item.user + ' at: ' + d.toString() + ' tag: <b>' + item.topic + '</b><br/>' + item.tweet + '</div>';
+       //   tweet_html = '<p>by : ' + item.count + ' at : ' + item.topic + '<br/>' + item.dayslot + '</p>';
+	  if (addIter == 9){
+	    $('#live_tweets').empty();
+	    addIter = 0;
+	  }
+          $('#live_tweets').prepend(tweet_html);
+	  addIter += 1;
+//	  console.log(tweet_html)
+        })
+    });
+}
+
+liveTweets();
+</script>
+
 {% endblock %}

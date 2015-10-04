@@ -119,7 +119,7 @@ singleTagTuples = tagsAsValue.flatMapValues(lambda x : x).persist() # ((daySlot,
 
 # city 
 tagCityDailyCount = singleTagTuples.map(lambda ((d, cc, c), t) : ((d, cc, c, t), 1)).reduceByKey(lambda x, y: x + y).persist()
-cdt = tagCityDailyCount.map(lambda ((d, cc, c, t), count) : (d, cc, c, t, count)) # flatMap(lambda x : x).saveToCassandra didn't work...
+cdt = tagCityDailyCount.map(lambda ((d, cc, c, t), count) : (d, cc, c, t, count))
 cdt.saveToCassandra(keyspace, "city_day_trends") # key: ((dayslot, country, city), topic)
 # top trends per city
 top_cdt_packed = tagCityDailyCount.map(lambda ((d, cc, c, t), count) : ((d, cc, c), (t, count))).groupByKey().map(lambda x : (x[0], sorted(list(x[1]), key=itemgetter(1), reverse=True)[:topCount]))
@@ -127,10 +127,10 @@ top_cdt = top_cdt_packed.flatMapValues(lambda x : x)
 top_cdt.saveToCassandra(keyspace, "city_day_top_trends") # top trends only
 
 # country
-tagCountryDailyCount = singleTagTuples.map(lambda ((d, cc, c), t) : ((d, cc, t), 1)).reduceByKey(lambda x, y: x + y) 
+tagCountryDailyCount = singleTagTuples.map(lambda ((d, cc, c), t) : ((d, cc, t), 1)).reduceByKey(lambda x, y: x + y).persist()
 ccdc = tagCountryDailyCount.map(lambda ((d, cc, t), count) : (d, cc, t, count))
 ccdc.saveToCassandra(keyspace, "country_day_trends") # key: ((dayslot, country), topic)
-#tagCountryDailyCount.takeOrdered(topCount, key = lambda x: -x[1]).saveToCassandra(keyspace, "country_day_top_trends")
+# top trends per country
 top_ccdt_packed = tagCountryDailyCount.map(lambda ((d, cc, t), count) : ((d, cc), (t, count))).groupByKey().map(lambda x : (x[0], sorted(list(x[1]), key=itemgetter(1), reverse=True)[:topCount]))
 top_ccdt = top_ccdt_packed.flatMapValues(lambda x : x)
 top_ccdt.saveToCassandra(keyspace, "country_day_top_trends") # top trends only

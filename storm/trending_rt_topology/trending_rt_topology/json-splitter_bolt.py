@@ -1,20 +1,26 @@
 from pyleus.storm import SimpleBolt
 import json
 import datetime
+import time
 from cassandra.cluster import Cluster
 
-# get poster's screen_name 
-def userName(item):
-    if ('user' in item) and isinstance(item['user'], dict):
-	if 'screen_name' in item['user']:
-	    return item['user']['screen_name']
-    return "Anonymous"
 # get poster's user
 def userId(item):
     if ('user' in item) and isinstance(item['user'], dict):
 	if 'id_str' in item['user']:
 	    return item['user']['id_str']
     return None
+# get poster's screen_name 
+def userName(item):
+    uName = "Anonymous"
+    if ('user' in item) and isinstance(item['user'], dict):
+	if 'screen_name' in item['user']:
+	    return item['user']['screen_name']
+	else:
+	    uName = userId(item)
+    if (uName is not None):
+	return uName
+    return "Anonymous"
 
 # get a combined list of the hashtags and user mentions 
 def trendItems(item):
@@ -54,8 +60,8 @@ def tweet_from_json_line(json_line):
 
     tweet = {}
     tweet['t_id'] = item['id_str']
-#    tweet['u_id'] = userId(item) # just the userId is enough
-    tweet['userName'] = userId(item) # just the userName is enough
+    tweet['u_id'] = userId(item) # just the userId is enough
+    tweet['userName'] = userName(item) # just the userName is enough
     tweet['coords'] = item['coordinates'] # list [longitude,latitude]
     tweet['tags'] = trendItems(item) # will have the combined list of hashtags and user mentions
     tweet['city'] = tweetCity(item)
@@ -88,13 +94,13 @@ def insert_locations(tweet):
 
 def insert_tweet_text(tweet, topic):
     cql_insert = """INSERT INTO rt_tweet_world (topic, user, time_ms, tweet)
-		    VALUES (%s, %s, %s)"""
+		    VALUES (%s, %s, %s, %s)"""
     session.execute(cql_insert, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
     cql_insert = """INSERT INTO rt_tweet_city (country, city, topic, user, time_ms, tweet)
-		    VALUES (%s, %s, %s, %s, %s)"""
+		    VALUES (%s, %s, %s, %s, %s, %s)"""
     session.execute(cql_insert, [tweet['country'], tweet['city'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
     cql_insert = """INSERT INTO rt_tweet_country (country, topic, user, time_ms, tweet)
-		    VALUES (%s, %s, %s, %s)"""
+		    VALUES (%s, %s, %s, %s, %s)"""
     session.execute(cql_insert, [tweet['country'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
 
 
@@ -106,8 +112,8 @@ class JsonSplitterBolt(SimpleBolt):
         json_tweet, = tup.values
 #	self.emit(['From Bolt', str(len(json_tweet)), str(type(json_tweet)), '---------------------'])
         tweet = tweet_from_json_line(json_tweet)
-        if tweet is None:
-	    self.emit(['From Bolt', "--- --- None --- ---", " --- --- parsing error ---", '---------------------'])
+        if (tweet is None) or (tweet['time_ms'] + 2000 < (time.time() * 1000L)): # only recent (within last 2 secnds) tweets
+#	    self.emit(['From Bolt', "--- --- None --- ---", " --- --- parsing error ---", '---------------------'])
 	    return
 
 	if len(tweet['coords']) > 0: # tweet with a location found
@@ -117,7 +123,7 @@ class JsonSplitterBolt(SimpleBolt):
 	    for topic in tweet['tags']:
 		insert_tweet_text(tweet, topic)
 		# send out the general info for the tick tuple process to combine
-        	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
+#        	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
 
 if __name__ == '__main__':
     JsonSplitterBolt().run()

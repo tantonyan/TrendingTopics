@@ -1,6 +1,6 @@
 #!/bin/bash
 
-topic="twitter-all-json2"
+topic="twitter-json"
 
 log="stream.log"
 

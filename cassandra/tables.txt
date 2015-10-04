@@ -9,7 +9,7 @@ CREATE TABLE world_hour_counts(
     count_type text,
     count int,
     PRIMARY KEY (hourslot, count_type)
-);
+) WITH default_time_to_live = 86400;
 
 DROP TABLE IF EXISTS world_day_counts;
 CREATE TABLE world_day_counts(
@@ -33,7 +33,7 @@ CREATE TABLE world_hour_trends (
     topic text,
     count int,
     PRIMARY KEY (hourslot, topic)
-);
+) WITH default_time_to_live = 86400;
 
 DROP TABLE IF EXISTS world_minute_trends;
 CREATE TABLE world_minute_trends (
@@ -41,7 +41,7 @@ CREATE TABLE world_minute_trends (
     topic text,
     count int,
     PRIMARY KEY (minuteslot, topic)
-);
+) WITH default_time_to_live = 1200;
 
 
 DROP TABLE IF EXISTS country_day_trends;
@@ -60,7 +60,7 @@ CREATE TABLE country_hour_trends (
     topic text,
     count int,
     PRIMARY KEY ((hourslot, country), topic)
-);
+) WITH default_time_to_live = 86400;
 
 DROP TABLE IF EXISTS country_minute_trends;
 CREATE TABLE country_minute_trends (
@@ -69,7 +69,7 @@ CREATE TABLE country_minute_trends (
     topic text,
     count int,
     PRIMARY KEY ((minuteslot, country), topic)
-);
+) WITH default_time_to_live = 1200;
 
 
 DROP TABLE IF EXISTS city_day_trends;
@@ -90,7 +90,7 @@ CREATE TABLE city_hour_trends (
     topic text,
     count int,
     PRIMARY KEY ((hourslot, country, city), topic)
-);
+) WITH default_time_to_live = 86400;
 
 DROP TABLE IF EXISTS city_minute_trends;
 CREATE TABLE city_minute_trends (
@@ -100,7 +100,7 @@ CREATE TABLE city_minute_trends (
     topic text,
     count int,
     PRIMARY KEY ((minuteslot, country, city), topic)
-);
+) WITH default_time_to_live = 1200;
 
 
 

@@ -9,7 +9,7 @@ cd $workdir
 
 echo `date` >> $log
 
-path_main="/camus/topics/twitter-all-json2/hourly/"
+path_main="/camus/topics/twitter-json/hourly/"
 
 path0=`date --date="1 hours ago" +%Y/%m/%d/%H`
 path1=`date --date="2 hours ago" +%Y/%m/%d/%H`
