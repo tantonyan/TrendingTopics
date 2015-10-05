@@ -35,4 +35,4 @@ There are two parts to the streaming process as well:
 Cassandra was chosen for it's high availability for quick writes. A cluster of 3 nodes manages the database.
 
 ### Web UI
-I used Flask to display the data.
+I used Flask to display the data. This runs on a separate node of type t2.micro
