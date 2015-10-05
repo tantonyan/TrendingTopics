@@ -77,7 +77,7 @@ def tweet_from_json_line(json_line):
     return tweet
 
 
-cluster = Cluster(['172.31.46.91'])
+cluster = Cluster(['172.31.46.91', '172.31.46.92', '172.31.46.93'])
 session = cluster.connect('trends')
 
 # insert into the location tables
@@ -85,24 +85,26 @@ def insert_locations(tweet):
     cql_insert = """INSERT INTO rt_tweet_locations_world (time_ms, lat, long)
 		    VALUES (%s, %s, %s)"""
     session.execute(cql_insert, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
+'''
     cql_insert = """INSERT INTO rt_tweet_locations_country (country, time_ms, lat, long)
 		    VALUES (%s, %s, %s, %s)"""
     session.execute(cql_insert, [tweet['country'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
     cql_insert = """INSERT INTO rt_tweet_locations_city (country, city, time_ms, lat, long)
 		    VALUES (%s, %s, %s, %s, %s)"""
     session.execute(cql_insert, [tweet['country'], tweet['city'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
-
+'''
 def insert_tweet_text(tweet, topic):
     cql_insert = """INSERT INTO rt_tweet_world (topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s)"""
     session.execute(cql_insert, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+'''
     cql_insert = """INSERT INTO rt_tweet_city (country, city, topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s, %s, %s)"""
     session.execute(cql_insert, [tweet['country'], tweet['city'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
     cql_insert = """INSERT INTO rt_tweet_country (country, topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s, %s)"""
     session.execute(cql_insert, [tweet['country'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
-
+'''
 
 class JsonSplitterBolt(SimpleBolt):
 
@@ -123,7 +125,7 @@ class JsonSplitterBolt(SimpleBolt):
 	    for topic in tweet['tags']:
 		insert_tweet_text(tweet, topic)
 		# send out the general info for the tick tuple process to combine
-#        	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
+        	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
 
 if __name__ == '__main__':
     JsonSplitterBolt().run()

@@ -14,16 +14,36 @@
  {% endif %}
 </script>
 {% endblock %}
-{% block location %} <!-- this is the name of the block below -->
+{% block map %} 
+ <div id="map"></div>
+ <script type="text/javascript">
+  var image = '../static/images/green_dot.png'
+  var locAPI = '/api/loc/'
+  var map;
+  function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: {lat: 30.176095, lng: -6.488868},
+      zoom: 2
+    });
+
+  var greenMarker = new google.maps.Marker({
+    position: {lat: -33.890, lng: 151.274},
+    map: map,
+    icon: image
+   });
+  }
+ </script> 
+{% endblock %}
+{% block location %} 
         <div class="row" style="height:10vh;">
-                <div class="col-md-4 col-md-offset-4 daily_form_div" style="margin-top:10vh;">
+                <div class="col-md-4 col-md-offset-4 daily_form_div" style="margin-top:1vh;">
                         <form action="live" method="POST">
                                 <div class="form-group text-center">
                                         <label style="font-weight:300; font-size:24px;">Geo-Location:</label>
                                         <input type="text" class="form-control" id="country" name="country" placeholder="US">
                                         <input type="text" class="form-control" id="city" name="city" placeholder="New York">
 
-                                        <button type="submit" value="Send" name="daily-container" class="btn btn-default id-submit">Submit</button>
+                                        <button type="submit" value="Send" name="daily-container" class="btn btn-default id-submit">Topics</button>
                                 </div>
                         </form>
                 </div>
@@ -71,15 +91,13 @@
 {% block tail %}
 <script>
 var t_int = 1000;
-var addTweets = setInterval(liveTweets, t_int);
+var addTweets = setInterval(liveItems, t_int);
 var addIter = 0;
 var ttAPI = "/api/rt/";
-//var ttAPI = "/api/topics-day/20150928/";
+var markers = [];
 
 function liveTweets() {
-  $.getJSON( ttAPI, {
-//    format: "json"
-  })
+  $.getJSON( ttAPI )
     .done(function( data ) {
       $.each( data.tweets, function( i, item ) {
       //$.each( data.country_day_trends, function( i, item ) {
@@ -98,7 +116,50 @@ function liveTweets() {
     });
 }
 
-liveTweets();
+// Sets the map on all markers in the array.
+function setMapOnAll(map) {
+  for (var i = 0; i < markers.length; i++) {
+    markers[i].setMap(map);
+  }
+}
+// Deletes all markers in the array by removing references to them.
+function deleteMarkers() {
+  setMapOnAll(null);  
+  markers = [];
+}
+// Adds a marker to the map and push to the array.
+function addMarker(location) {
+  var marker = new google.maps.Marker({
+    position: location,
+    map: map
+  });
+  markers.push(marker);
+}
+
+function liveLocations() {
+  deleteMarkers()
+  $.getJSON( locAPI )
+    .done(function( data ) {
+      $.each( data.tweet_locations, function( i, item ) {
+	var loc = {lat: item.latitude, lng: item.longitude};
+	addMarker(loc)
+      })
+    });
+}
+
+function liveItems() {
+ liveLocations();
+ liveTweets();
+}
+
+liveItems();
+
 </script>
 
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDElSPIgRjb-T5Ma0PdHR2HmJzX2l0yHOs&callback=initMap">
+</script>
+
+<script>
+</script>
 {% endblock %}
