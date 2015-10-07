@@ -82,16 +82,20 @@ def tweet_from_json_line(json_line):
 
 
 def insert_locations(batch, tweet):
-    cql_prepare = "INSERT INTO rt_tweet_locations_world (time_ms, lat, long) VALUES (?, ?, ?)"
-    loc_stmt = session.prepare(cql_prepare)
+#    cql_prepare = "INSERT INTO rt_tweet_locations_world (time_ms, lat, long) VALUES (?, ?, ?)"
+    cql_stmt = "INSERT INTO rt_tweet_locations_world (time_ms, lat, long) VALUES (%s, %s, %s)"
+#    loc_stmt = session.prepare(cql_prepare)
 
-    batch.add(loc_stmt, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
+#    batch.add(loc_stmt, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
+    session.execute(cql_stmt, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
 
 def insert_tweet_text(batch, tweet, topic):
-    cql_prepare = "INSERT INTO rt_tweet_world (topic, user, time_ms, tweet) VALUES (?, ?, ?, ?)"
-    tweet_stmt = session.prepare(cql_prepare)
+#    cql_prepare = "INSERT INTO rt_tweet_world (topic, user, time_ms, tweet) VALUES (?, ?, ?, ?)"
+    cql_stmt = "INSERT INTO rt_tweet_world (topic, user, time_ms, tweet) VALUES (%s, %s, %s, %s)"
+#    tweet_stmt = session.prepare(cql_prepare)
 
-    batch.add(tweet_stmt, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+#    batch.add(tweet_stmt, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+    session.execute(cql_stmt, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
 
 def batch_trends_world(batch, minuteslot, records): # records is an array of (topic, count)
     cql_prepare = "INSERT INTO world_minute_trends (minuteslot, topic, count) VALUES (?, ?, ?)"
@@ -155,24 +159,27 @@ class JsonSplitterBolt(SimpleBolt):
 	    return
 
 	if len(tweet['coords']) > 0: # tweet with a location found
-	    insert_locations(self.batchS, tweet)
+	    if (self.stmtCounter % 2 == 0): # only insert half 
+	        insert_locations(self.batchS, tweet)
 	    self.stmtCounter += 1
 	    if (self.stmtCounter >= 20):
-		session.execute(self.batchS)
+	#	session.execute(self.batchS)
 		self.stmtCounter = 0
 
 	if len(tweet['tags']) > 0: # tweet with a topic(s) found
 	    for topic in tweet['tags']:
-		insert_tweet_text(self.batchS, tweet, topic)
+	        if (self.stmtCounter % 2 == 0): # only insert half 
+		    insert_tweet_text(self.batchS, tweet, topic)
 	        self.stmtCounter += 1
 	        if (self.stmtCounter >= 20):
-		    session.execute(self.batchS)
+	#	    session.execute(self.batchS)
 		    self.stmtCounter = 0
 
-		self.build_minute_items(tweet['country'], tweet['city'], topic)
+#		self.build_minute_items(tweet['country'], tweet['city'], topic)
 #        	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
 
     def process_tick(self):
+	return
 	self.minuteslot = long(time.strftime('%Y%m%d%H%M'))
 
 	batch_trends_city(self.batchM, self.minuteslot, self.cityTrends)
