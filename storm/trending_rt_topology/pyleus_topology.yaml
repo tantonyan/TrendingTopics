@@ -11,7 +11,7 @@ topology:
         options:
             # The Kafka topic to stream from.
             # Required.
-            topic: twitter-json
+            topic: twitter-json2
 
             # ZooKeeper connection string. Comma-separated list of ZooKeeper
             # servers.

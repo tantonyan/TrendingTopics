@@ -19,7 +19,7 @@ fi
 path_main="/tweets/twitter-json/daily/"
 
 ss="/usr/local/spark/bin/spark-submit"
-arg_master="--master spark://172.31.20.120:7077"
+arg_master="--master spark://172.31.25.203:7077"
 arg_packages="--packages TargetHolding/pyspark-cassandra:0.1.5"
 arg_conf="--conf spark.cassandra.connection.host=172.31.46.91"
 script="daily-run.py"

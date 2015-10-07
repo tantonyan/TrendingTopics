@@ -7,7 +7,7 @@ import pyspark_cassandra
 from operator import itemgetter, attrgetter
 
 
-hdfs = "hdfs://ec2-54-209-187-157.compute-1.amazonaws.com:9000"
+hdfs = "hdfs://172.31.25.203:9000"
 path = ""
 keyspace = "trends"
 topCount = 20 # to be used when inserting into top tables -- will spead up the reads later

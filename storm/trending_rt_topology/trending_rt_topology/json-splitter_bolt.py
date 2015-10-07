@@ -85,26 +85,11 @@ def insert_locations(tweet):
     cql_insert = """INSERT INTO rt_tweet_locations_world (time_ms, lat, long)
 		    VALUES (%s, %s, %s)"""
     session.execute(cql_insert, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
-'''
-    cql_insert = """INSERT INTO rt_tweet_locations_country (country, time_ms, lat, long)
-		    VALUES (%s, %s, %s, %s)"""
-    session.execute(cql_insert, [tweet['country'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
-    cql_insert = """INSERT INTO rt_tweet_locations_city (country, city, time_ms, lat, long)
-		    VALUES (%s, %s, %s, %s, %s)"""
-    session.execute(cql_insert, [tweet['country'], tweet['city'], tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
-'''
+
 def insert_tweet_text(tweet, topic):
     cql_insert = """INSERT INTO rt_tweet_world (topic, user, time_ms, tweet)
 		    VALUES (%s, %s, %s, %s)"""
     session.execute(cql_insert, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
-'''
-    cql_insert = """INSERT INTO rt_tweet_city (country, city, topic, user, time_ms, tweet)
-		    VALUES (%s, %s, %s, %s, %s, %s)"""
-    session.execute(cql_insert, [tweet['country'], tweet['city'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
-    cql_insert = """INSERT INTO rt_tweet_country (country, topic, user, time_ms, tweet)
-		    VALUES (%s, %s, %s, %s, %s)"""
-    session.execute(cql_insert, [tweet['country'], topic, tweet['userName'], tweet['time_ms'], tweet['text']])
-'''
 
 class JsonSplitterBolt(SimpleBolt):
 

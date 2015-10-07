@@ -6,7 +6,7 @@ if [ $# -lt 1 ]; then
 fi
 
 date=$1
-path_from="/camus/topics/twitter-json/hourly/"$date
+path_from="/camus/topics/twitter-json2/hourly/"$date
 path_to="/tweets/twitter-json/daily/"$date
 
 HDFS="/usr/local/hadoop/bin/hdfs"

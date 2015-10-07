@@ -9,22 +9,22 @@ session = cluster.connect('trends')
 def insert_trends_world(minuteslot, records): # records is an array of (topic, count)
     cql_insert = """INSERT INTO world_minute_trends (minuteslot, topic, count)
 		    VALUES (%s, %s, %s)"""
-    for topic, count in records:
+    for topic, count in records.iteritems():
       session.execute(cql_insert, [minuteslot, topic, count])
 
 def insert_trends_country(minuteslot, records): # records is an array of (country, topic, count)
     cql_insert = """INSERT INTO country_minute_trends (minuteslot, country, topic, count)
 		    VALUES (%s, %s, %s, %s)"""
-    for record, count in records:
+    for record, count in records.iteritems():
       session.execute(cql_insert, [minuteslot, record[0], record[1], count])
 
 def insert_trends_city(minuteslot, records): # records is an array of (country, city, topic, count)
     cql_insert = """INSERT INTO city_minute_trends (minuteslot, country, city, topic, count)
 		    VALUES (%s, %s, %s, %s, %s)"""
-    for record, count in records:
+    for record, count in records.iteritems():
       session.execute(cql_insert, [minuteslot, record[0], record[1], record[2], count])
 
-
+    
 class MinuteBolt(SimpleBolt):
 
     def initialize(self):
@@ -32,6 +32,14 @@ class MinuteBolt(SimpleBolt):
 	self.countryTrends = {}
 	self.cityTrends = {}
 	minuteslot = long(time.strftime('%Y%m%d%H%M'))
+
+    def log_status(self):
+      with open('/home/ubuntu/temp/minute-bolt.json', 'a') as f:
+	f.write("------ " + str(self.minuteslot) + " -------")
+	f.write(str(self.worldTrends))
+	f.write(str(self.countryTrends))
+	f.write(str(self.cityTrends))
+      f.close()
 
     def process_tuple(self, tup):
         time_ms,country,city,topic = tup.values
@@ -62,6 +70,7 @@ class MinuteBolt(SimpleBolt):
 	insert_trends_city(self.minuteslot, self.cityTrends)
 	insert_trends_country(self.minuteslot, self.countryTrends)
 	insert_trends_world(self.minuteslot, self.worldTrends)
+#	self.log_status()
 	self.worldTrends.clear()
 	self.countryTrends.clear()
 	self.cityTrends.clear()
