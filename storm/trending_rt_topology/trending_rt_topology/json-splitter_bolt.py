@@ -5,6 +5,9 @@ import time
 from cassandra.cluster import Cluster
 from cassandra.query import BatchStatement
 
+cluster = Cluster(['172.31.46.91', '172.31.46.92', '172.31.46.93'])
+session = cluster.connect('trends')
+
 # get poster's user
 def userId(item):
     if ('user' in item) and isinstance(item['user'], dict):
@@ -78,20 +81,17 @@ def tweet_from_json_line(json_line):
     return tweet
 
 
-cluster = Cluster(['172.31.46.91', '172.31.46.92', '172.31.46.93'])
-session = cluster.connect('trends')
-
 def insert_locations(batch, tweet):
     cql_prepare = "INSERT INTO rt_tweet_locations_world (time_ms, lat, long) VALUES (?, ?, ?)"
     loc_stmt = session.prepare(cql_prepare)
 
-    batch.add(cql_prepare, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
+    batch.add(loc_stmt, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
 
 def insert_tweet_text(batch, tweet, topic):
     cql_prepare = "INSERT INTO rt_tweet_world (topic, user, time_ms, tweet) VALUES (?, ?, ?, ?)"
     tweet_stmt = session.prepare(cql_prepare)
 
-    batch.add(cql_prepare, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+    batch.add(tweet_stmt, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
 
 def batch_trends_world(batch, minuteslot, records): # records is an array of (topic, count)
     cql_prepare = "INSERT INTO world_minute_trends (minuteslot, topic, count) VALUES (?, ?, ?)"
@@ -157,7 +157,7 @@ class JsonSplitterBolt(SimpleBolt):
 	if len(tweet['coords']) > 0: # tweet with a location found
 	    insert_locations(self.batchS, tweet)
 	    self.stmtCounter += 1
-	    if (self.stmtCounter == 20):
+	    if (self.stmtCounter >= 20):
 		session.execute(self.batchS)
 		self.stmtCounter = 0
 
@@ -165,7 +165,7 @@ class JsonSplitterBolt(SimpleBolt):
 	    for topic in tweet['tags']:
 		insert_tweet_text(self.batchS, tweet, topic)
 	        self.stmtCounter += 1
-	        if (self.stmtCounter == 20):
+	        if (self.stmtCounter >= 20):
 		    session.execute(self.batchS)
 		    self.stmtCounter = 0
 
