@@ -22,7 +22,7 @@ def live():
 def live_post():
  country = request.form["country"] 
  city = request.form["city"] 
- return render_template("live.html")
+ return render_template("live.html", country=country, city=city)
 
 
 @app.route('/stats')
@@ -285,17 +285,18 @@ def get_tweets_hour(hourslot=None, country=None, city=None):
 	else: 
             jsonresponse = [{"hourslot": x.hourslot, "topic": x.topic, "count": x.count} for x in response_list]
 
-        return jsonify(country_day_trends=jsonresponse)
+        return jsonify(hour_trends=jsonresponse)
 
 
 @app.route('/api/topics-minute/')
 @app.route('/api/topics-minute/<minuteslot>/')
 @app.route('/api/topics-minute/<minuteslot>/<country>/')
-@app.route('/api/topics-minute/<minuteslot>/<country>/<city>')
+@app.route('/api/topics-minute/<minuteslot>/<country>/<city>/')
 def get_tweets_minute(minuteslot=None, country=None, city=None):
 	stmt_main = "SELECT * FROM " # the main part of statements...
 	stmt_1 = "" # will add constraints
-	stmt_limit = " limit 1000"
+#	stmt_limit = " limit 1000"
+	stmt_limit = ""
 	params = []
 	table = "world_minute_trends" # if minuteslot is not specified still use world
 	# find and add the optional url parameters
@@ -304,14 +305,15 @@ def get_tweets_minute(minuteslot=None, country=None, city=None):
 	    params.append(long(minuteslot))
             if (country is not None):
                 stmt_1 += " and country=%s"
-	        table = "country_day_trends"
+	        table = "country_minute_trends"
 	        params.append(country)
                 if (city is not None): # will only happen if the country is set
 		    stmt_1 += " and city=%s"
-		    table = "city_day_trends"
+		    table = "city_minute_trends"
 	            params.append(city)
 
 	stmt = stmt_main + table + stmt_1 + stmt_limit
+#	return ("stmt: " + stmt)
         response = session.execute(stmt, params)
         response_list = []
         for val in response:
@@ -324,7 +326,9 @@ def get_tweets_minute(minuteslot=None, country=None, city=None):
 	else: 
             jsonresponse = [{"minuteslot": x.minuteslot, "topic": x.topic, "count": x.count} for x in response_list]
 
-        return jsonify(country_day_trends=jsonresponse)
+        sortedJson = sorted(list(jsonresponse), key=itemgetter('count'), reverse=True)[:topCount]
+
+        return jsonify(minute_trends=sortedJson)
 
 
 
@@ -332,6 +336,7 @@ def get_tweets_minute(minuteslot=None, country=None, city=None):
 @app.route('/api/rt/<topic>/<country>') # for a given country
 @app.route('/api/rt/<topic>/<country>/<city>') # for a given city
 def get_rt(topic=None, country=None, city=None):
+#	return jsonify(tweets="")
 	stmt_main = "SELECT * FROM " # the main part of statements...
 	stmt_1 = "" # will add constraints
 	stmt_limit = " limit 10"
@@ -394,9 +399,10 @@ def get_timeslots(slotname):
 @app.route('/api/loc/<country>/') # only for a selected country
 @app.route('/api/loc/<country>/<city>') # locations for a given city
 def get_locations(country=None, city=None):
+#	return jsonify(tweet_locations="")
 	stmt_main = "SELECT * FROM " # the main part of statements...
 	stmt_1 = "" # will add constraints
-	stmt_limit = " limit 20"
+#	stmt_limit = " limit 20"
 	params = []
 	table = "rt_tweet_locations_world" # table name to be used
 	# find and add the optional url parameters
@@ -409,7 +415,7 @@ def get_locations(country=None, city=None):
 		table = "rt_tweet_locations_city"
 	        params.append(city)
 		
-	stmt = stmt_main + table + stmt_1 + stmt_limit
+	stmt = stmt_main + table + stmt_1# + stmt_limit
         response = session.execute(stmt, parameters=params)
         response_list = []
         for val in response:
@@ -422,5 +428,7 @@ def get_locations(country=None, city=None):
 	else:
 	    jsonresponse = [{"latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
 
-        return jsonify(tweet_locations=jsonresponse)
+        sortedJson = sorted(list(jsonresponse), key=itemgetter('time_ms'), reverse=True)[:topCount*2]
+
+        return jsonify(tweet_locations=sortedJson)
 

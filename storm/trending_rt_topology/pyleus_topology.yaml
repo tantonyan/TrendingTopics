@@ -44,5 +44,14 @@ topology:
         module: trending_rt_topology.json-splitter_bolt
         groupings:
             - shuffle_grouping: kafka-json-tweets
+
+    - bolt:
+        name: minute-bolt
+        module: trending_rt_topology.minute-bolt
+        groupings:
+            - fields_grouping: 
+                  component: kafka-json-splitter
+                  fields:
+                      - country
         tick_freq_secs: 60
 

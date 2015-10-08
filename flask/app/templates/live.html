@@ -3,15 +3,49 @@
 {% block nav_active_live %}active{% endblock %}
 {% block head %}
 <script type="text/javascript">
-  var rtLocURL = "/api/loc/"
-  var country = '';
-  var city = '';
- {% if country %}
-  country =  {{ country|safe }};
- {% endif %}
- {% if city %}
-  city =  {{ city|safe }};
- {% endif %}
+function fixDateTime(item){
+  return ("0" + item).slice(-2);
+}
+function getMinuteslot(){
+  var d = new Date();
+  d.setTime(d.getTime() - 1000 * 60); // one minute ago
+  var curr_date = fixDateTime(d.getDate());
+  var curr_month = fixDateTime(d.getMonth()+1);
+  var curr_year = d.getFullYear();
+  var curr_hour = fixDateTime(d.getHours());
+  var curr_min = fixDateTime(d.getMinutes());
+
+  return curr_year + curr_month + curr_date + curr_hour + curr_min
+}
+
+var minuteslot = getMinuteslot();
+var country = "";
+var city = "";
+var mTrendsURL = "/api/topics-minute/" + minuteslot + "/";
+var rtLocURL = "/api/loc/"
+var headTr_html = "<th>";
+{% if country %}
+country = "{{country}}";
+mTrendsURL += country + "/";
+headTr_html += "country</th><th>";
+{% endif %}
+{% if city %}
+city = "{{city}}";
+mTrendsURL += city + "/";
+headTr_html += "city</th><th>";
+{% endif %}
+headTr_html += "topic</th><th>count</th>";
+
+function updateTrendsURL(){
+  minuteslot = getMinuteslot();
+  mTrendsURL = "/api/topics-minute/" + minuteslot + "/";
+  if (country){
+    mTrendsURL += country + "/";
+    if (city){
+      mTrendsURL += city + "/";
+    }
+  }
+}
 </script>
 {% endblock %}
 {% block map %} 
@@ -22,22 +56,16 @@
   var map;
   function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
-      center: {lat: 30.176095, lng: -6.488868},
+      center: {lat: 25.176095, lng: 3.68},
       zoom: 2
     });
-
-  var greenMarker = new google.maps.Marker({
-    position: {lat: -33.890, lng: 151.274},
-    map: map,
-    icon: image
-   });
   }
  </script> 
 {% endblock %}
 {% block location %} 
         <div class="row" style="height:10vh;">
                 <div class="col-md-4 col-md-offset-4 daily_form_div" style="margin-top:1vh;">
-                        <form action="live" method="POST">
+                        <form action="live" id="locForm" method="POST">
                                 <div class="form-group text-center">
                                         <label style="font-weight:300; font-size:24px;">Geo-Location:</label>
                                         <input type="text" class="form-control" id="country" name="country" placeholder="US">
@@ -52,31 +80,16 @@
 {% endblock %}
 
 {% block trend %}
- {% if output %}
 <div class="container">
       <div class="starter-template">
         <div class="row" style="height:100vh;">
                 <div class="col-md-10 col-md-offset-1 trend-results">
-		<h2>Number of trends: {{totalTrends}}{% if totalTweets and totalTweets>0 %} Total tweets: {{totalTweets}}{% endif %}</h2>
-                    <table class="table">
+                    <table class="table" id="trendsTable">
                       <thead>
-                        <tr>
-                          {% if fields>=1 %}<th>country</th>{% endif %}
-                          {% if fields==2 %}<th>city</th>{% endif %}
-                          <th>topic</th>
-                          <th>count</th>
+                        <tr id="trendsHeadTr">
                         </tr>
                       </thead>
-                      <tbody>
-			{% set sort_on = request.args.sort_on|default('count') %}
-                        {% for val in output|sort(attribute=sort_on, reverse=True) %}
-                        <tr>
-                          {% if fields>=1 %}<td>{{val.country}}</td>{% endif %}
-                          {% if fields==2 %}<td>{{val.city}}</td>{% endif %}
-                          <td>{{val.topic|e}}</td>
-                          <td>{{val.count}}</td>
-                        </tr>
-                        {% endfor %}
+                      <tbody id="trendsTb">
                       </tbody>
                     </table>
                 </div>
@@ -85,13 +98,32 @@
 
     </div>
 
- {% endif %}
 {% endblock %}
 
 {% block tail %}
 <script>
-var t_int = 1000;
-var addTweets = setInterval(liveItems, t_int);
+$('#trendsHeadTr').append(headTr_html);
+
+
+function liveTrends() {
+  updateTrendsURL();
+  $.getJSON( mTrendsURL )    
+    .done(function( data ) {
+      $('#trendsTb').empty();
+      console.log(data.lenght);
+      $.each( data.minute_trends, function( i, item ) {                                                                     
+	row_html = '<tr><td>';
+	if (country){
+	  row_html += item.country + '</td><td>';
+	}
+	if (city){
+	  row_html += item.city + '</td><td>';
+	}
+	row_html += item.topic + '</td><td>' + item.count + '</td></tr>';
+	$('#trendsTb').append(row_html);
+        })                                                                                            
+    });
+}
 var addIter = 0;
 var ttAPI = "/api/rt/";
 var markers = [];
@@ -116,30 +148,28 @@ function liveTweets() {
     });
 }
 
-// Sets the map on all markers in the array.
-function setMapOnAll(map) {
-  for (var i = 0; i < markers.length; i++) {
-    markers[i].setMap(map);
-  }
-}
 // Deletes all markers in the array by removing references to them.
 function deleteMarkers() {
-  setMapOnAll(null);  
+  for (var i = 0; i < markers.length; i++) {
+    markers[i].setMap(null);
+  }
   markers = [];
 }
 // Adds a marker to the map and push to the array.
 function addMarker(location) {
   var marker = new google.maps.Marker({
     position: location,
-    map: map
+    map: map,
+    icon: image
   });
   markers.push(marker);
 }
 
 function liveLocations() {
-  deleteMarkers()
   $.getJSON( locAPI )
     .done(function( data ) {
+      console.log("deleting: " + markers.length + " : " + markers);
+      deleteMarkers(); // remove old
       $.each( data.tweet_locations, function( i, item ) {
 	var loc = {lat: item.latitude, lng: item.longitude};
 	addMarker(loc)
@@ -147,13 +177,18 @@ function liveLocations() {
     });
 }
 
-function liveItems() {
+function secItems() {
  liveLocations();
  liveTweets();
 }
 
-liveItems();
+secItems();
+liveTrends();
 
+var s_int = 2000;
+var m_int = 60000;
+var secUpdates = setInterval(secItems, s_int); // run on 2 seconds loop
+var minUpdates = setInterval(liveTrends, m_int); // run on  minute loop
 </script>
 
 <script async defer
