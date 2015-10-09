@@ -2,14 +2,22 @@ from pyleus.storm import SimpleBolt
 import datetime
 import time
 from cassandra.cluster import Cluster
+from operator import itemgetter#, attrgetter
+
+import logging
+import logging.config
 
 cluster = Cluster(['172.31.46.93', '172.31.46.92', '172.31.46.91'])
 session = cluster.connect('trends')
 
+log = logging.getLogger("trending_rt_topology.minute-bolt")
+topCount = 20
+
 def insert_trends_world(minuteslot, records): # records is an array of (topic, count)
     cql_insert = """INSERT INTO world_minute_trends (minuteslot, topic, count)
 		    VALUES (%s, %s, %s)"""
-    for topic, count in records.iteritems():
+    sorted_r = sorted(records.items(), key=itemgetter(1), reverse=True)[:topCount]
+    for topic, count in sorted_r:
       session.execute(cql_insert, [minuteslot, topic, count])
 
 def insert_trends_country(minuteslot, records): # records is an array of (country, topic, count)
@@ -66,6 +74,7 @@ class MinuteBolt(SimpleBolt):
 	    self.worldTrends[worldKey] = 1
 
     def process_tick(self):
+	log.info("Processing a tick: sizes=%d, %d, %d", len(self.worldTrends), len(self.countryTrends), len(self.cityTrends))
 	self.minuteslot = long(time.strftime('%Y%m%d%H%M'))
 	insert_trends_city(self.minuteslot, self.cityTrends)
 	insert_trends_country(self.minuteslot, self.countryTrends)
@@ -74,6 +83,7 @@ class MinuteBolt(SimpleBolt):
 	self.worldTrends.clear()
 	self.countryTrends.clear()
 	self.cityTrends.clear()
+	log.info("Cleared state: sizes=%d, %d, %d", len(self.worldTrends), len(self.countryTrends), len(self.cityTrends))
 
 if __name__ == '__main__':
     MinuteBolt().run()

@@ -125,26 +125,32 @@ function liveTrends() {
     });
 }
 var addIter = 0;
-var ttAPI = "/api/rt/";
+var d = new Date();
+var seconds = Math.floor(d.getTime() / 1000);
+var ttAPI = "/api/rt/" + seconds;
 var markers = [];
 
+function updateTURL() {
+  d = new Date();
+  seconds = Math.floor(d.getTime() / 1000);
+  ttAPI = "/api/rt/" + seconds;
+}
+
 function liveTweets() {
+  updateTURL();
   $.getJSON( ttAPI )
     .done(function( data ) {
+      if (addIter == 9){
+	$('#live_tweets').empty();
+	  addIter = 0;
+      }
       $.each( data.tweets, function( i, item ) {
-      //$.each( data.country_day_trends, function( i, item ) {
-        //tweet_html = '<div class="tweet animated fadeInDown">by: ' + item.user + ' at: ' + item.time_ms + ' tag: <b>' + item.topic + '</b><br/>' + item.tweet + '</div>';
         var d = new Date(item.time_ms);
           tweet_html = '<div class="tweet">by: ' + item.user + ' at: ' + d.toString() + ' tag: <b>' + item.topic + '</b><br/>' + item.tweet + '</div>';
-       //   tweet_html = '<p>by : ' + item.count + ' at : ' + item.topic + '<br/>' + item.dayslot + '</p>';
-	  if (addIter == 9){
-	    $('#live_tweets').empty();
-	    addIter = 0;
-	  }
           $('#live_tweets').prepend(tweet_html);
-	  addIter += 1;
 //	  console.log(tweet_html)
         })
+      addIter += 1;
     });
 }
 
@@ -168,7 +174,7 @@ function addMarker(location) {
 function liveLocations() {
   $.getJSON( locAPI )
     .done(function( data ) {
-      console.log("deleting: " + markers.length + " : " + markers);
+//      console.log("deleting: " + markers.length + " : " + markers);
       deleteMarkers(); // remove old
       $.each( data.tweet_locations, function( i, item ) {
 	var loc = {lat: item.latitude, lng: item.longitude};

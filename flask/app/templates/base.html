@@ -53,13 +53,13 @@
 
     <div class="container">
 
-	{% block map %}{% endblock %}
       <div class="tweets" id="tweets_div">
-      	<div id="tweet_trends" class="starter-template"></div>
+<!--      	<div id="tweet_trends" class="starter-template"></div>-->
       	<div id="live_tweets" class="starter-template"></div>
       </div>
 
       <div class="charts">
+	{% block map %}{% endblock %}
 	{% block location %}{% endblock %}
 	{% block trend %}{% endblock %}
 	{% block charts %}{% endblock %}

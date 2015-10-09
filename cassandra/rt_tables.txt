@@ -7,7 +7,7 @@ CREATE TABLE rt_tweet_locations_world (
     lat float,
     long float,
     PRIMARY KEY (secslot, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 30;
+) WITH default_time_to_live = 120;
 
 DROP TABLE IF EXISTS rt_tweet_locations_country;
 CREATE TABLE rt_tweet_locations_country (
@@ -17,7 +17,7 @@ CREATE TABLE rt_tweet_locations_country (
     lat float,
     long float,
     PRIMARY KEY (secslot, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 30;
+) WITH default_time_to_live = 120;
 
 DROP TABLE IF EXISTS rt_tweet_locations_city;
 CREATE TABLE rt_tweet_locations_city (
@@ -28,7 +28,7 @@ CREATE TABLE rt_tweet_locations_city (
     lat float,
     long float,
     PRIMARY KEY (secslot, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 30;
+) WITH default_time_to_live = 120;
 
 DROP TABLE IF EXISTS rt_tweet_world;
 CREATE TABLE rt_tweet_world (
@@ -38,7 +38,7 @@ CREATE TABLE rt_tweet_world (
     time_ms bigint,
     tweet text,
     PRIMARY KEY (secslot, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 60;
+) WITH default_time_to_live = 120;
 
 DROP TABLE IF EXISTS rt_tweet_country;
 CREATE TABLE rt_tweet_country (
@@ -49,7 +49,7 @@ CREATE TABLE rt_tweet_country (
     time_ms bigint,
     tweet text,
     PRIMARY KEY (secslot, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 60;
+) WITH and default_time_to_live = 120;
 
 DROP TABLE IF EXISTS rt_tweet_city;
 CREATE TABLE rt_tweet_city (
@@ -61,4 +61,4 @@ CREATE TABLE rt_tweet_city (
     time_ms bigint,
     tweet text,
     PRIMARY KEY (secslot, time_ms)
-) WITH CLUSTERING ORDER BY (time_ms DESC) and default_time_to_live = 60;
+) WITH default_time_to_live = 120;

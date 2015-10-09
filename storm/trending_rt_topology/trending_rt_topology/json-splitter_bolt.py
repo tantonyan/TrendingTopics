@@ -5,8 +5,13 @@ import time
 from cassandra.cluster import Cluster
 from cassandra.query import BatchStatement
 
+import logging
+import logging.config
+
 cluster = Cluster(['172.31.46.91', '172.31.46.92', '172.31.46.93'])
 session = cluster.connect('trends')
+
+log = logging.getLogger("trending_rt_topology.json-splitter_bolt")
 
 # get poster's user
 def userId(item):
@@ -151,6 +156,7 @@ class JsonSplitterBolt(SimpleBolt):
 #		    self.stmtCounter = 0
 
 #		self.build_minute_items(tweet['country'], tweet['city'], topic)
+		log.info("Sending %r", (tweet['time_ms'], tweet['country'], tweet['city'], topic))
         	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
 
 #    def process_tick(self):

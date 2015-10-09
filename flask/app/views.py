@@ -8,7 +8,8 @@ from datetime import date, datetime, timedelta
 import collections
 
 #cluster = Cluster(['cassandra.trendinghashtags.net'])
-cluster = Cluster(['54.174.164.10', '54.175.246.246', '54.85.147.238'])
+#cluster = Cluster(['54.174.164.10', '54.175.246.246', '54.85.147.238'])
+cluster = Cluster(['52.23.200.250', '54.175.185.121', '54.175.183.189'])
 session = cluster.connect('trends')
 topCount = 20
 
@@ -293,6 +294,11 @@ def get_tweets_hour(hourslot=None, country=None, city=None):
 @app.route('/api/topics-minute/<minuteslot>/<country>/')
 @app.route('/api/topics-minute/<minuteslot>/<country>/<city>/')
 def get_tweets_minute(minuteslot=None, country=None, city=None):
+	minutesOld = datetime.now() - timedelta(minutes = 10)
+	oldSlot = minutesOld.strftime('%Y%m%d%H%M')
+	if (oldSlot > minuteslot):
+	    return jsonify(minute_trends="")
+
 	stmt_main = "SELECT * FROM " # the main part of statements...
 	stmt_1 = "" # will add constraints
 #	stmt_limit = " limit 1000"
@@ -332,18 +338,18 @@ def get_tweets_minute(minuteslot=None, country=None, city=None):
 
 
 
-@app.route('/api/rt/') # real time tweets 
-@app.route('/api/rt/<topic>/<country>') # for a given country
-@app.route('/api/rt/<topic>/<country>/<city>') # for a given city
-def get_rt(topic=None, country=None, city=None):
+@app.route('/api/rt/<secslot>') # real time tweets 
+@app.route('/api/rt/<secslot>/<topic>/<country>') # for a given country
+@app.route('/api/rt/<secslot>/<topic>/<country>/<city>') # for a given city
+def get_rt(secslot=None, topic=None, country=None, city=None):
 #	return jsonify(tweets="")
 	stmt_main = "SELECT * FROM " # the main part of statements...
-	stmt_1 = "" # will add constraints
+	stmt_1 = " WHERE secslot=%s" # will add more constraints
+	params = [long(secslot)]
 	stmt_limit = " limit 10"
-	params = []
 	table = "rt_tweet_world" # table name to be used
         if (country is not None):
-	    stmt_1 = " WHERE topic=%s and country=%s"
+	    stmt_1 = " and topic=%s and country=%s"
 	    table = "rt_tweet_country" # use country if specified
 	    params.append(topic, country)
             if (city is not None): # will only happen if the country is set
