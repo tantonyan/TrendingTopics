@@ -8,7 +8,7 @@ function fixDateTime(item){
 }
 function getMinuteslot(){
   var d = new Date();
-  d.setTime(d.getTime() - 1000 * 60); // one minute ago
+  d.setTime(d.getTime() - 2000 * 60); // two minutes ago
   var curr_date = fixDateTime(d.getDate());
   var curr_month = fixDateTime(d.getMonth()+1);
   var curr_year = d.getFullYear();
@@ -80,7 +80,7 @@ function updateTrendsURL(){
 {% endblock %}
 
 {% block trend %}
-<div class="container">
+<div class="container live">
       <div class="starter-template">
         <div class="row" style="height:100vh;">
                 <div class="col-md-10 col-md-offset-1 trend-results">
@@ -132,7 +132,7 @@ var markers = [];
 
 function updateTURL() {
   d = new Date();
-  seconds = Math.floor(d.getTime() / 1000);
+  seconds = Math.floor((d.getTime() / 1000) - 60); // ask for one minute old due to time difference between servers/user's machine (about 30 seconds between UI and HDFS)
   ttAPI = "/api/rt/" + seconds;
 }
 
@@ -188,12 +188,16 @@ function secItems() {
  liveTweets();
 }
 
-secItems();
+liveLocations();
+liveTweets();
 liveTrends();
 
-var s_int = 2000;
+$('#tweets_div').prepend('<br/>Sample Tweets<br/>');
+
+var l_int = 1000;
+var t_int = 2000;
 var m_int = 60000;
-var secUpdates = setInterval(secItems, s_int); // run on 2 seconds loop
+var secUpdates = setInterval(secItems, t_int); // run on 2 seconds loop
 var minUpdates = setInterval(liveTrends, m_int); // run on  minute loop
 </script>
 
@@ -203,4 +207,7 @@ var minUpdates = setInterval(liveTrends, m_int); // run on  minute loop
 
 <script>
 </script>
+<p>
+<a href="https://youtu.be/Zxjo3zT0VdI" target="_blank">Live page video</a>
+</p>
 {% endblock %}

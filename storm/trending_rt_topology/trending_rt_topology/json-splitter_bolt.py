@@ -11,7 +11,8 @@ import logging.config
 cluster = Cluster(['172.31.46.91', '172.31.46.92', '172.31.46.93'])
 session = cluster.connect('trends')
 
-log = logging.getLogger("trending_rt_topology.json-splitter_bolt")
+log = logging.getLogger("json-splitter_bolt")
+toLog = False
 
 # get poster's user
 def userId(item):
@@ -86,6 +87,13 @@ def tweet_from_json_line(json_line):
     return tweet
 
 
+def insert_cql(cql_stmt, params): # wrapper to catch exceptions
+    try:
+	session.execute(cql_stmt, params)
+    except:
+	e = sys.exc_info()[0]
+	log.exception("Exception on insert: " + e + "\n\t" + cql_stmt + str(params))
+	
 def insert_locations(tweet):
 #    cql_prepare = "INSERT INTO rt_tweet_locations_world (time_ms, lat, long) VALUES (?, ?, ?)"
     cql_stmt = "INSERT INTO rt_tweet_locations_world (secslot, time_ms, lat, long) VALUES (%s, %s, %s, %s)"
@@ -93,7 +101,7 @@ def insert_locations(tweet):
 
 #    batch.add(loc_stmt, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
     secslot = tweet['time_ms'] / 1000L # take the seconds
-    session.execute(cql_stmt, [secslot, tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
+    insert_cql(cql_stmt, [secslot, tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
 
 def insert_tweet_text(tweet, topic):
 #    cql_prepare = "INSERT INTO rt_tweet_world (topic, user, time_ms, tweet) VALUES (?, ?, ?, ?)"
@@ -102,7 +110,7 @@ def insert_tweet_text(tweet, topic):
 
 #    batch.add(tweet_stmt, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
     secslot = tweet['time_ms'] / 1000L # seconds as key
-    session.execute(cql_stmt, [secslot, topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+    insert_cql(cql_stmt, [secslot, topic, tweet['userName'], tweet['time_ms'], tweet['text']])
 
 #def batch_trends_world(batch, minuteslot, records): # records is an array of (topic, count)
 #    cql_prepare = "INSERT INTO world_minute_trends (minuteslot, topic, count) VALUES (?, ?, ?)"
@@ -133,7 +141,9 @@ class JsonSplitterBolt(SimpleBolt):
     def process_tuple(self, tup):
         json_tweet, = tup.values
         tweet = tweet_from_json_line(json_tweet)
-        if (tweet is None) or (tweet['time_ms'] + 2000 < (time.time() * 1000L)): # only recent (within last 2 secnds) tweets
+        if (tweet is None) or ((tweet['time_ms'] + 60000) < (time.time() * 1000L)): # only recent (within the last minute: time differences) tweets
+#	    if (tweet is not None):
+#		log.info("Returning: " + str(tweet['time_ms'] + 2000) + " < " + str(time.time() * 1000L))
 	    return
 
 	if len(tweet['coords']) > 0: # tweet with a location found
@@ -156,8 +166,9 @@ class JsonSplitterBolt(SimpleBolt):
 #		    self.stmtCounter = 0
 
 #		self.build_minute_items(tweet['country'], tweet['city'], topic)
-		log.info("Sending %r", (tweet['time_ms'], tweet['country'], tweet['city'], topic))
         	self.emit((tweet['time_ms'], tweet['country'], tweet['city'], topic), anchors=[tup])
+		if toLog:
+		    log.info("Sent %r", (tweet['time_ms'], tweet['country'], tweet['city'], topic))
 
 #    def process_tick(self):
 #	return
