@@ -1,0 +1,49 @@
+body {
+  padding-top: 50px;
+}
+.starter-template {
+  padding: 20px 15px;
+  text-align: center;
+}
+
+.container .tweets {
+  float: left;
+  width: 250px;
+}
+
+.tweet-trends {
+  text-align: left;
+}
+
+#live_tweets {
+  height: 500px;
+  overflow-y:auto;
+}
+
+.charts .daily_form_div {
+  width: 70%;
+  margin-left: 3%;
+}
+.daily_form_div .btn {
+  margin-left: 10px;
+}
+.charts .form-control {
+  width: 20%;
+  display: inline;
+}
+
+#country {
+  width: 10%;
+}
+
+.tweet {
+  text-align: left;
+  border-bottom: thin dotted #CCCCCC;
+}
+.trend-results {
+  width: 77%;
+  margin-left: 1%;
+}
+#map {
+  height: 100%;
+}
