@@ -6,6 +6,7 @@ from cassandra.cluster import Cluster
 from operator import itemgetter, attrgetter
 from datetime import date, datetime, timedelta
 import collections
+import time
 
 #cluster = Cluster(['cassandra.trendinghashtags.net'])
 #cluster = Cluster(['54.174.164.10', '54.175.246.246', '54.85.147.238'])
@@ -290,15 +291,14 @@ def get_tweets_hour(hourslot=None, country=None, city=None):
 
 
 @app.route('/api/topics-minute/')
-@app.route('/api/topics-minute/<minuteslot>/')
-@app.route('/api/topics-minute/<minuteslot>/<country>/')
-@app.route('/api/topics-minute/<minuteslot>/<country>/<city>/')
-def get_tweets_minute(minuteslot=None, country=None, city=None):
-	minutesOld = datetime.now() - timedelta(minutes = 10)
-	oldSlot = minutesOld.strftime('%Y%m%d%H%M')
-	if (oldSlot > minuteslot):
-	    return jsonify(minute_trends="")
-
+@app.route('/api/topics-minute/<country>/')
+@app.route('/api/topics-minute/<country>/<city>/')
+#@app.route('/api/topics-minute/<minuteslot>/')
+#@app.route('/api/topics-minute/<minuteslot>/<country>/')
+#@app.route('/api/topics-minute/<minuteslot>/<country>/<city>/')
+def get_tweets_minute(country=None, city=None):
+#        return jsonify(minute_trends="")
+	minuteslot = long(time.strftime('%Y%m%d%H%M',time.localtime(time.time() - 120)))
 	stmt_main = "SELECT * FROM " # the main part of statements...
 	stmt_1 = "" # will add constraints
 #	stmt_limit = " limit 1000"
@@ -338,11 +338,16 @@ def get_tweets_minute(minuteslot=None, country=None, city=None):
 
 
 
-@app.route('/api/rt/<secslot>') # real time tweets 
-@app.route('/api/rt/<secslot>/<topic>/<country>') # for a given country
-@app.route('/api/rt/<secslot>/<topic>/<country>/<city>') # for a given city
-def get_rt(secslot=None, topic=None, country=None, city=None):
+@app.route('/api/rt/') # real time tweets 
+@app.route('/api/rt/<topic>/<country>') # for a given country
+@app.route('/api/rt/<topic>/<country>/<city>') # for a given city
+#@app.route('/api/rt/<secslot>') # real time tweets 
+#@app.route('/api/rt/<secslot>/<topic>/<country>') # for a given country
+#@app.route('/api/rt/<secslot>/<topic>/<country>/<city>') # for a given city
+def get_rt(topic=None, country=None, city=None):
 #	return jsonify(tweets="")
+        # we will fix the secslot here
+	secslot = long(time.time()) - 60 # one minute delay for time diffs 
 	stmt_main = "SELECT * FROM " # the main part of statements...
 	stmt_1 = " WHERE secslot=%s" # will add more constraints
 	params = [long(secslot)]
@@ -372,6 +377,45 @@ def get_rt(secslot=None, topic=None, country=None, city=None):
         return jsonify(tweets=jsonresponse)
 	
 
+# locations -- /loc/[country]/[city]
+@app.route('/api/loc/') # all locations
+@app.route('/api/loc/<country>/') # only for a selected country
+@app.route('/api/loc/<country>/<city>') # locations for a given city
+def get_locations(country=None, city=None):
+#	return jsonify(tweet_locations="")
+	secslot = long(time.time()) - 60 # one minute delay for time diffs 
+	stmt_main = "SELECT * FROM " # the main part of statements...
+	stmt_1 = " WHERE secslot=%s" # will add more constraints
+#	stmt_limit = " limit 20"
+	params = [secslot]
+	table = "rt_tweet_locations_world" # table name to be used
+	# find and add the optional url parameters
+        if (country is not None):
+	    stmt_1 = " WHERE country=%s"
+	    table = "rt_tweet_locations_country" # use country 
+	    params.append(country)
+            if (city is not None): # will only happen if the country is set
+		stmt_1 += " and city=%s"
+		table = "rt_tweet_locations_city"
+	        params.append(city)
+		
+	stmt = stmt_main + table + stmt_1# + stmt_limit
+        response = session.execute(stmt, parameters=params)
+        response_list = []
+        for val in response:
+             response_list.append(val)
+
+	if (city is not None):
+	    jsonresponse = [{"country": x.country, "city": x.city, "latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
+	elif (country is not None):
+	    jsonresponse = [{"country": x.country, "latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
+	else:
+	    jsonresponse = [{"latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
+
+#        sortedJson = sorted(list(jsonresponse), key=itemgetter('time_ms'), reverse=True)[:topCount*2]
+
+        return jsonify(tweet_locations=jsonresponse)
+
 @app.route('/api/timeslots/<slotname>') # hourly is optional
 def get_timeslots(slotname):
   table = "world_day_top_trends" # default to day
@@ -399,42 +443,4 @@ def get_timeslots(slotname):
       times[item]  = v[:4] + "/" + v[4:6] + "/" + v[6:8] + " " + v[8:10] + ":" + v[10:] 
   sortedJson = collections.OrderedDict(sorted(times.items()))
   return jsonify(timeslots=sortedJson)
-
-# locations -- /loc/[country]/[city]
-@app.route('/api/loc/') # all locations
-@app.route('/api/loc/<country>/') # only for a selected country
-@app.route('/api/loc/<country>/<city>') # locations for a given city
-def get_locations(country=None, city=None):
-#	return jsonify(tweet_locations="")
-	stmt_main = "SELECT * FROM " # the main part of statements...
-	stmt_1 = "" # will add constraints
-#	stmt_limit = " limit 20"
-	params = []
-	table = "rt_tweet_locations_world" # table name to be used
-	# find and add the optional url parameters
-        if (country is not None):
-	    stmt_1 = " WHERE country=%s"
-	    table = "rt_tweet_locations_country" # use country 
-	    params.append(country)
-            if (city is not None): # will only happen if the country is set
-		stmt_1 += " and city=%s"
-		table = "rt_tweet_locations_city"
-	        params.append(city)
-		
-	stmt = stmt_main + table + stmt_1# + stmt_limit
-        response = session.execute(stmt, parameters=params)
-        response_list = []
-        for val in response:
-             response_list.append(val)
-
-	if (city is not None):
-	    jsonresponse = [{"country": x.country, "city": x.city, "latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
-	elif (country is not None):
-	    jsonresponse = [{"country": x.country, "latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
-	else:
-	    jsonresponse = [{"latitude": x.lat, "longitude": x.long, "time_ms": x.time_ms} for x in response_list]
-
-        sortedJson = sorted(list(jsonresponse), key=itemgetter('time_ms'), reverse=True)[:topCount*2]
-
-        return jsonify(tweet_locations=sortedJson)
 

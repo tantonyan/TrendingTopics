@@ -3,13 +3,20 @@ import json
 import datetime
 import time
 from cassandra.cluster import Cluster
-from cassandra.query import BatchStatement
+from cassandra.query import BatchStatement, PreparedStatement
 
 import logging
 import logging.config
 
 cluster = Cluster(['172.31.46.91', '172.31.46.92', '172.31.46.93'])
 session = cluster.connect('trends')
+
+cql_loc_insert = "INSERT INTO rt_tweet_locations_world (secslot, time_ms, lat, long) VALUES (?, ?, ?, ?)"
+cql_tweet_insert = "INSERT INTO rt_tweet_world (secslot, topic, user, time_ms, tweet) VALUES (?, ?, ?, ?, ?)"
+
+cql_loc_stmt = session.prepare(cql_loc_insert)
+cql_tweet_stmt = session.prepare(cql_tweet_insert)
+
 
 log = logging.getLogger("json-splitter_bolt")
 toLog = False
@@ -87,30 +94,30 @@ def tweet_from_json_line(json_line):
     return tweet
 
 
-def insert_cql(cql_stmt, params): # wrapper to catch exceptions
+def insert_cql(cql_prep_stmt, params): # wrapper to catch exceptions
     try:
-	session.execute(cql_stmt, params)
+	session.execute_async(cql_prep_stmt, params)
     except:
 	e = sys.exc_info()[0]
-	log.exception("Exception on insert: " + e + "\n\t" + cql_stmt + str(params))
+	log.exception("Exception on insert: " + str(e) + "\n\t" + cql_stmt + str(params))
 	
 def insert_locations(tweet):
 #    cql_prepare = "INSERT INTO rt_tweet_locations_world (time_ms, lat, long) VALUES (?, ?, ?)"
-    cql_stmt = "INSERT INTO rt_tweet_locations_world (secslot, time_ms, lat, long) VALUES (%s, %s, %s, %s)"
 #    loc_stmt = session.prepare(cql_prepare)
 
 #    batch.add(loc_stmt, [tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
-    secslot = tweet['time_ms'] / 1000L # take the seconds
-    insert_cql(cql_stmt, [secslot, tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
+    #secslot = tweet['time_ms'] / 1000L # take the seconds
+    secslot = long(time.time()) # take the system time instead of the tweet time
+    insert_cql(cql_loc_stmt, [secslot, tweet['time_ms'], float(tweet['coords'][1]), float(tweet['coords'][0])])
 
 def insert_tweet_text(tweet, topic):
 #    cql_prepare = "INSERT INTO rt_tweet_world (topic, user, time_ms, tweet) VALUES (?, ?, ?, ?)"
-    cql_stmt = "INSERT INTO rt_tweet_world (secslot, topic, user, time_ms, tweet) VALUES (%s, %s, %s, %s, %s)"
 #    tweet_stmt = session.prepare(cql_prepare)
 
 #    batch.add(tweet_stmt, [topic, tweet['userName'], tweet['time_ms'], tweet['text']])
-    secslot = tweet['time_ms'] / 1000L # seconds as key
-    insert_cql(cql_stmt, [secslot, topic, tweet['userName'], tweet['time_ms'], tweet['text']])
+    #secslot = tweet['time_ms'] / 1000L # take the seconds
+    secslot = long(time.time()) # take the system time instead of the tweet time
+    insert_cql(cql_tweet_stmt, [secslot, topic, tweet['userName'], tweet['time_ms'], tweet['text']])
 
 #def batch_trends_world(batch, minuteslot, records): # records is an array of (topic, count)
 #    cql_prepare = "INSERT INTO world_minute_trends (minuteslot, topic, count) VALUES (?, ?, ?)"
