@@ -1,0 +1,15 @@
+HDFS DN machine
+
+
+Camus: kafka -> hdfs
+
+./hadoop-daemon.sh stop tasktracker
+./hadoop-daemon.sh stop datanode
+
+./hadoop-daemon.sh start datanode
+./hadoop-daemon.sh start tasktracker
+
+
+Mount drives:
+sudo mount /dev/xvdf /mnt/disk2
+sudo mount /dev/xvdg /mnt/kafka

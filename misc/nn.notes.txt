@@ -1,0 +1,29 @@
+HDFS NN machine
+
+Twitter stream read -> kafka
+amus: kafka -> hdfs
+
+
+kafka-consumer twitter-all-json
+
+# top 10 large folders under current dir
+sudo du -skh * | sort -nr | head -20 
+
+Mount drives:
+sudo mount /dev/xvdf /mnt/disk2
+sudo mount /dev/xvdg /mnt/kafka
+
+sudo netstat -lp --inet
+
+
+kafka topic changes:
+
+
+./TrendingTopics/stream/run-twitter-stream.sh    :topic="twitter-json2"
+
+./config/camus/camus.properties:kafka.whitelist.topics=twitter-json2
+./spark/move-daily-tweets.sh:path_from="/camus/topics/twitter-json2/hourly/"$date
+
+./cron/batch-hourly.sh:path_main="/camus/topics/twitter-json2/hourly/"
+./storm/trending_rt_topology/pyleus_topology.yaml:            topic: twitter-json2
+
