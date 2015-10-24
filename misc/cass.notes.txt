@@ -1,0 +1,10 @@
+#start one node at a time:
+cassandra
+
+nodetool status
+
+# ui on seed
+/usr/local/opscenter/bin/opscenter
+# for ui - on all nodes
+/usr/local/datastax-agent/bin/datastax-agent
+
