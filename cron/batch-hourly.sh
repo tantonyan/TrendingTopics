@@ -9,7 +9,7 @@ cd $workdir
 
 echo `date` >> $log
 
-path_main="/camus/topics/twitter-json4/hourly/"
+path_main="/camus/topics/twitter-json5/hourly/"
 
 path0=`date --date="1 hours ago" +%Y/%m/%d/%H`
 path1=`date --date="2 hours ago" +%Y/%m/%d/%H`
@@ -22,6 +22,7 @@ arg_conf="--conf spark.cassandra.connection.host=172.31.46.91"
 script="hourly-run.py"
 
 subpaths=($path0 $path1 $path2)
+subpaths=($path0)
 for p in "${subpaths[@]}"
 do
     path=$path_main$p

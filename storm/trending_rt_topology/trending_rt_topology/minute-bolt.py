@@ -12,7 +12,6 @@ import logging.config
 cluster = Cluster(['172.31.46.93', '172.31.46.92', '172.31.46.91'])
 session = cluster.connect('trends')
 
-batch = BatchStatement()
 
 cql_world_insert = "INSERT INTO world_minute_trends (minuteslot, topic, count) VALUES (?, ?, ?)"
 cql_country_insert = "INSERT INTO country_minute_trends (minuteslot, country, topic, count) VALUES (?, ?, ?, ?)"
@@ -22,12 +21,16 @@ cql_world_stmt = session.prepare(cql_world_insert)
 cql_country_stmt = session.prepare(cql_country_insert)
 cql_city_stmt = session.prepare(cql_city_insert)
 
+batch_limit_world = 70 # will be capped by topCount (20) anyway
+batch_limit_country = 50
+batch_limit_city = 30
+
 log = logging.getLogger("minute-bolt")
 toLog = False
 
 topCount = 20
 
-def execBatch(): # simple wrapper to run the batch executions and log exceptions
+def execBatch(batch): # simple wrapper to run the batch executions and log exceptions
     try:
 	session.execute(batch)
     except:
@@ -41,49 +44,56 @@ def insert_cql(cql_prep_stmt, params): # wrapper to catch exceptions
 	e = sys.exc_info()[0]
 	log.exception("Exception on insert: " + str(e) + "\n\t" + cql_stmt + str(params))
 	
+
 def insert_trends_world(minuteslot, records): # records is an array of (topic, count)
     sorted_r = sorted(records.items(), key=itemgetter(1), reverse=True)[:topCount]
     count = 0
+    batch = BatchStatement()
     for topic, count in sorted_r:
+      '''
       insert_cql(cql_world_stmt, (minuteslot, topic, count))
-'''
+      '''
       batch.add(cql_world_stmt, (minuteslot, topic, count))
       count += 1
-      if (count == 10):
-        execBatch()
+      if (count == batch_limit_world):
+        execBatch(batch)
         count = 0
+        batch = BatchStatement()
 
     if (count > 0):
-      execBatch()
-'''
+      execBatch(batch)
 def insert_trends_country(minuteslot, records): # records is an array of (country, topic, count)
     count = 0
+    batch = BatchStatement()
     for record, count in records.iteritems():
+      '''
       insert_cql(cql_country_stmt, (minuteslot, record[0], record[1], count))
-'''
+      '''
       batch.add(cql_country_stmt, (minuteslot, record[0], record[1], count))
       count += 1
-      if (count == 10):
-        execBatch()
+      if (count == batch_limit_country):
+        execBatch(batch)
         count = 0
+        batch = BatchStatement()
 
     if (count > 0):
-      execBatch()
-'''
+      execBatch(batch)
 def insert_trends_city(minuteslot, records): # records is an array of (country, city, topic, count)
     count = 0
+    batch = BatchStatement()
     for record, count in records.iteritems():
+      '''
       insert_cql(cql_city_stmt, (minuteslot, record[0], record[1], record[2], count))
-'''
+      '''
       batch.add(cql_city_stmt, (minuteslot, record[0], record[1], record[2], count))
       count += 1
-      if (count == 10):
-        execBatch()
+      if (count == batch_limit_city):
+        execBatch(batch)
         count = 0
+        batch = BatchStatement()
 
     if (count > 0):
-      execBatch()
-'''
+      execBatch(batch)
     
 class MinuteBolt(SimpleBolt):
 
